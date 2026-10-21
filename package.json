@@ -1,0 +1,21 @@
+{
+  "name": "simulador-escalas-malemi",
+  "version": "1.0.0",
+  "description": "Simulador de Escalas e Custos de Folha de Pagamento - Malemi Data Solutions",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test tests/**/*.test.js"
+  },
+  "keywords": [
+    "folha-de-pagamento",
+    "escalas-de-trabalho",
+    "simulador",
+    "clt",
+    "malemi"
+  ],
+  "author": "Malemi Data Solutions",
+  "license": "UNLICENSED"
+}

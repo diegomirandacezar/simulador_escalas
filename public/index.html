@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Malemi — Simulador de Escalas e Custos de Folha | API & Interface</title>
+  <meta name="description" content="Simulador de escalas de trabalho e estimativa de custos de folha de pagamento com rastreabilidade e auditoria para Malemi Data Solutions.">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e',
+              950: '#082f49',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Estilos Customizados -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 antialiased selection:bg-sky-500 selection:text-white">
+
+  <!-- Header Superior -->
+  <header class="sticky top-0 z-50 glass-panel border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo e Título -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-sky-500/20">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs uppercase font-extrabold tracking-widest text-sky-400 bg-sky-950/80 px-2 py-0.5 rounded border border-sky-800">Malemi Data</span>
+              <span class="text-xs text-slate-400">v1.0.0 (Fase 1)</span>
+            </div>
+            <h1 class="text-lg font-bold text-white tracking-tight">Simulador de Escalas & Folha</h1>
+          </div>
+        </div>
+
+        <!-- Status da API e Indicador -->
+        <div class="flex items-center space-x-4">
+          <div id="statusBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-900 border border-slate-700/80 text-xs">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-online"></span>
+            <span id="statusText" class="text-slate-300 font-medium">Verificando API...</span>
+          </div>
+
+          <a href="#tab-api" onclick="switchTab('api')" class="hidden md:inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-sky-600 hover:bg-sky-500 text-white transition shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+            </svg>
+            <span>Explorar API</span>
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Barra de Navegação por Abas -->
+      <nav class="flex space-x-1 overflow-x-auto pb-1 text-xs font-medium border-t border-slate-800/60 pt-2 no-scrollbar">
+        <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="tab-btn active px-3.5 py-2 rounded-t-lg transition whitespace-nowrap flex items-center space-x-1.5 text-slate-300 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+          <span>Visão Geral</span>
+        </button>
+        <button onclick="switchTab('api')" id="btn-tab-api" class="tab-btn px-3.5 py-2 rounded-t-lg transition whitespace-nowrap flex items-center space-x-1.5 text-slate-300 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span>Explorador da API REST</span>
+        </button>
+        <button onclick="switchTab('calendario')" id="btn-tab-calendario" class="tab-btn px-3.5 py-2 rounded-t-lg transition whitespace-nowrap flex items-center space-x-1.5 text-slate-300 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span>Escalas & Calendário Mensal</span>
+        </button>
+        <button onclick="switchTab('eventos')" id="btn-tab-eventos" class="tab-btn px-3.5 py-2 rounded-t-lg transition whitespace-nowrap flex items-center space-x-1.5 text-slate-300 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          <span>Catálogo de Eventos & Regras</span>
+        </button>
+        <button onclick="switchTab('simulador')" id="btn-tab-simulador" class="tab-btn px-3.5 py-2 rounded-t-lg transition whitespace-nowrap flex items-center space-x-1.5 text-slate-300 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+          <span>Simulador & Comparador</span>
+        </button>
+        <button onclick="switchTab('validador')" id="btn-tab-validador" class="tab-btn px-3.5 py-2 rounded-t-lg transition whitespace-nowrap flex items-center space-x-1.5 text-slate-300 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+          <span>Qualidade de Importação</span>
+        </button>
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- ==================== ABA 1: DASHBOARD ==================== -->
+    <section id="pane-dashboard" class="space-y-6">
+      
+      <!-- Banner Informativo da Fase 1 -->
+      <div class="glass-panel rounded-2xl p-6 gradient-border-top border border-slate-800">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-semibold mb-2">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <span>Fase 1: Levantamento, Validação e Preparação Segura</span>
+            </div>
+            <h2 class="text-2xl font-extrabold text-white">Ambiente do Simulador de Escalas e Custos de Folha</h2>
+            <p class="text-sm text-slate-300 mt-1 max-w-3xl leading-relaxed">
+              Sistema arquitetado em estrita conformidade com o <code class="text-sky-300">SPEC.md</code>. Nesta fase preliminar, o motor preserva os dados de referência e identifica horas projetadas sem inventar fórmulas trabalhistas antes da homologação formal das Convenções Coletivas.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="testarTudo()" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-semibold transition flex items-center space-x-2 shadow-lg shadow-sky-600/20">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Testar Conexão da API</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Métricas Rápidas -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-card rounded-xl p-4 border border-slate-800">
+          <p class="text-xs font-medium text-slate-400">Filiais Registradas</p>
+          <p id="metricFiliais" class="text-2xl font-bold text-white mt-1">3</p>
+          <p class="text-[11px] text-sky-400 mt-0.5">Matriz, Campinas, RJ</p>
+        </div>
+        <div class="glass-card rounded-xl p-4 border border-slate-800">
+          <p class="text-xs font-medium text-slate-400">Colaboradores Modelo</p>
+          <p id="metricFuncionarios" class="text-2xl font-bold text-white mt-1">6</p>
+          <p class="text-[11px] text-emerald-400 mt-0.5">Dados 100% anonimizados</p>
+        </div>
+        <div class="glass-card rounded-xl p-4 border border-slate-800">
+          <p class="text-xs font-medium text-slate-400">Escalas Cadastradas</p>
+          <p id="metricEscalas" class="text-2xl font-bold text-white mt-1">4</p>
+          <p class="text-[11px] text-indigo-400 mt-0.5">5x2, 6x1, 12x36 D/N</p>
+        </div>
+        <div class="glass-card rounded-xl p-4 border border-slate-800">
+          <p class="text-xs font-medium text-slate-400">Regras Mapeadas</p>
+          <p id="metricRegras" class="text-2xl font-bold text-amber-400 mt-1">4</p>
+          <p class="text-[11px] text-amber-400/80 mt-0.5">Pendentes de Homologação</p>
+        </div>
+      </div>
+
+      <!-- Princípios da Arquitetura -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-panel rounded-xl p-5 border border-slate-800 space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-sm">1</div>
+          <h3 class="text-base font-bold text-white">Não Inventar Regras</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Fórmulas de folha, divisores (200h vs 220h) e percentuais de horas extras são mantidos sob auditoria até a validação formal da CCT.
+          </p>
+        </div>
+        <div class="glass-panel rounded-xl p-5 border border-slate-800 space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">2</div>
+          <h3 class="text-base font-bold text-white">Preservação da Referência</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Eventos independentes da escala (como salário contratual base) mantêm seus valores originais íntegros em qualquer cenário simulado.
+          </p>
+        </div>
+        <div class="glass-panel rounded-xl p-5 border border-slate-800 space-y-3">
+          <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-sm">3</div>
+          <h3 class="text-base font-bold text-white">Memória de Cálculo & Auditoria</h3>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Toda simulação gera rastreabilidade completa (<code class="text-purple-300">auditTrail</code>), documentando premissas e fontes de cada rubrica.
+          </p>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== ABA 2: EXPLORADOR DA API ==================== -->
+    <section id="pane-api" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white">Explorador & Console da API REST</h2>
+          <p class="text-xs text-slate-400">Endpoints nativos em Node.js (JavaScript) prontos para integração e validação.</p>
+        </div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xs text-slate-400">Host:</span>
+          <span class="text-xs font-mono bg-slate-900 px-2.5 py-1 rounded border border-slate-700 text-sky-400">http://127.0.0.1:3000/api</span>
+        </div>
+      </div>
+
+      <!-- Grade de Testes de Endpoints -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Lista de Rotas -->
+        <div class="lg:col-span-5 space-y-3">
+          <div class="glass-panel rounded-xl p-4 border border-slate-800 space-y-2">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Selecione uma Rota para Testar</p>
+            
+            <div class="space-y-1.5">
+              <button onclick="executarRota('GET', '/api/health')" class="w-full text-left px-3 py-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between text-xs">
+                <span class="font-mono text-emerald-400 font-bold">GET /api/health</span>
+                <span class="text-[11px] text-slate-400">Status & Versão</span>
+              </button>
+
+              <button onclick="executarRota('GET', '/api/filiais')" class="w-full text-left px-3 py-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between text-xs">
+                <span class="font-mono text-sky-400 font-bold">GET /api/filiais</span>
+                <span class="text-[11px] text-slate-400">Filiais da Malemi</span>
+              </button>
+
+              <button onclick="executarRota('GET', '/api/funcionarios')" class="w-full text-left px-3 py-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between text-xs">
+                <span class="font-mono text-sky-400 font-bold">GET /api/funcionarios</span>
+                <span class="text-[11px] text-slate-400">Lista Anonimizada</span>
+              </button>
+
+              <button onclick="executarRota('GET', '/api/escalas')" class="w-full text-left px-3 py-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between text-xs">
+                <span class="font-mono text-sky-400 font-bold">GET /api/escalas</span>
+                <span class="text-[11px] text-slate-400">Escalas Base (5x2, 6x1, 12x36)</span>
+              </button>
+
+              <button onclick="executarRota('GET', '/api/eventos')" class="w-full text-left px-3 py-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between text-xs">
+                <span class="font-mono text-sky-400 font-bold">GET /api/eventos</span>
+                <span class="text-[11px] text-slate-400">Catálogo de Rubricas</span>
+              </button>
+
+              <button onclick="executarRota('GET', '/api/regras')" class="w-full text-left px-3 py-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between text-xs">
+                <span class="font-mono text-amber-400 font-bold">GET /api/regras</span>
+                <span class="text-[11px] text-slate-400">Hipóteses & Pendências</span>
+              </button>
+
+              <button onclick="executarRota('POST', '/api/escalas/calendario', { ano: 2026, mes: 10, escalaId: 'ESC-5X2-COM' })" class="w-full text-left px-3 py-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between text-xs">
+                <span class="font-mono text-indigo-400 font-bold">POST /api/escalas/calendario</span>
+                <span class="text-[11px] text-slate-400">Gerar Mês Completo</span>
+              </button>
+
+              <button onclick="executarRota('POST', '/api/simulacoes', { novaEscalaId: 'ESC-12X36-NOT', ano: 2026, mes: 10 })" class="w-full text-left px-3 py-2.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 transition flex items-center justify-between text-xs">
+                <span class="font-mono text-purple-400 font-bold">POST /api/simulacoes</span>
+                <span class="text-[11px] text-slate-400">Simular Cenário 12x36</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Painel de Saída JSON -->
+        <div class="lg:col-span-7 space-y-2">
+          <div class="glass-panel rounded-xl p-4 border border-slate-800 flex flex-col h-full">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div class="flex items-center space-x-2">
+                <span id="consoleMethod" class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-400">GET</span>
+                <span id="consoleUrl" class="font-mono text-xs text-slate-300">/api/health</span>
+              </div>
+              <span id="consoleTime" class="text-[11px] text-slate-400 font-mono">0ms</span>
+            </div>
+
+            <pre id="consoleOutput" class="code-viewer p-4 mt-3 flex-1 overflow-x-auto text-sky-300 h-96 max-h-[460px]">Clique em uma das rotas à esquerda para disparar a chamada à API.</pre>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== ABA 3: ESCALAS & CALENDÁRIO ==================== -->
+    <section id="pane-calendario" class="hidden space-y-6">
+      
+      <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-white">Visualizador de Calendário Mensal e Escalas</h2>
+            <p class="text-xs text-slate-400">Geração dinâmica da grade de jornadas, turnos noturnos, DSR e intervalos.</p>
+          </div>
+
+          <!-- Controles de Seleção -->
+          <div class="flex flex-wrap items-center gap-3">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Escala Base:</label>
+              <select id="selectEscalaCal" onchange="carregarCalendario()" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+                <option value="ESC-5X2-COM">Comercial 5x2 (08h às 17h)</option>
+                <option value="ESC-6X1-FAB">Operacional Fábrica 6x1 (06h às 14h20)</option>
+                <option value="ESC-12X36-DIA">Plantão Diurno 12x36 (07h às 19h)</option>
+                <option value="ESC-12X36-NOT">Plantão Noturno 12x36 (19h às 07h)</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Mês / Ano:</label>
+              <div class="flex space-x-1.5">
+                <select id="selectMesCal" onchange="carregarCalendario()" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-white focus:outline-none focus:border-sky-500">
+                  <option value="1">Janeiro</option>
+                  <option value="2">Fevereiro</option>
+                  <option value="3">Março</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Maio</option>
+                  <option value="6">Junho</option>
+                  <option value="7">Julho</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Setembro</option>
+                  <option value="10" selected>Outubro</option>
+                  <option value="11">Novembro</option>
+                  <option value="12">Dezembro</option>
+                </select>
+                <input id="inputAnoCal" type="number" value="2026" onchange="carregarCalendario()" class="w-20 bg-slate-900 border border-slate-700 text-xs rounded-lg px-2.5 py-2 text-white focus:outline-none focus:border-sky-500">
+              </div>
+            </div>
+
+            <div class="pt-5">
+              <button onclick="carregarCalendario()" class="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold transition">
+                Recarregar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sumário do Calendário -->
+        <div id="calendarSummary" class="grid grid-cols-2 md:grid-cols-5 gap-3 pt-4 border-t border-slate-800">
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400">Dias de Trabalho:</span>
+            <p id="sumDiasTrabalho" class="text-lg font-bold text-sky-400 mt-0.5">--</p>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400">Dias de Folga / DSR:</span>
+            <p id="sumDiasFolga" class="text-lg font-bold text-slate-300 mt-0.5">--</p>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400">Horas Planejadas:</span>
+            <p id="sumHorasPlanejadas" class="text-lg font-bold text-emerald-400 mt-0.5">--</p>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400">Horas Noturnas (22h-05h):</span>
+            <p id="sumHorasNoturnas" class="text-lg font-bold text-indigo-400 mt-0.5">--</p>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400">Datas Especiais:</span>
+            <p id="sumDiasEspeciais" class="text-lg font-bold text-amber-400 mt-0.5">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grade dos Dias do Mês -->
+      <div id="calendarGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+
+    </section>
+
+    <!-- ==================== ABA 4: CATÁLOGO DE EVENTOS ==================== -->
+    <section id="pane-eventos" class="hidden space-y-6">
+      
+      <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
+        <div>
+          <h2 class="text-xl font-bold text-white">Catálogo de Eventos de Folha & Hipóteses</h2>
+          <p class="text-xs text-slate-300 mt-1">
+            Conforme <code class="text-sky-300">SPEC.md item 4.4</code>: Todo evento possui classificação formal (Independente vs Dependente da Escala). Nenhuma fórmula jurídica é presumida sem documento homologado.
+          </p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider text-[11px] border-b border-slate-800">
+              <tr>
+                <th class="py-3 px-4">Código</th>
+                <th class="py-3 px-4">Rubrica / Evento</th>
+                <th class="py-3 px-4">Tipo</th>
+                <th class="py-3 px-4">Sensibilidade à Escala</th>
+                <th class="py-3 px-4">Status da Regra</th>
+                <th class="py-3 px-4">Observações e Tratamento</th>
+              </tr>
+            </thead>
+            <tbody id="eventosTableBody" class="divide-y divide-slate-800/60">
+              <!-- Renderizado dinamicamente via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tabela de Regras e Pendências -->
+      <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
+        <h3 class="text-lg font-bold text-white">Matriz de Regras e Pendências Jurídicas/CCT</h3>
+        <div id="regrasList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Renderizado dinamicamente via JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== ABA 5: SIMULADOR & COMPARADOR ==================== -->
+    <section id="pane-simulador" class="hidden space-y-6">
+      
+      <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-white">Simulador de Cenários Alternativos de Escala</h2>
+            <p class="text-xs text-slate-400">Projete uma nova escala sobre os colaboradores e compare com o cenário de referência.</p>
+          </div>
+
+          <!-- Controles da Simulação -->
+          <div class="flex flex-wrap items-center gap-3">
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Filial:</label>
+              <select id="simFilial" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-white">
+                <option value="">Todas as Filiais</option>
+                <option value="FIL-01">Matriz - São Paulo</option>
+                <option value="FIL-02">Filial 1 - Campinas</option>
+                <option value="FIL-03">Filial 2 - Rio de Janeiro</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] text-slate-400 mb-1">Nova Escala Proposta:</label>
+              <select id="simNovaEscala" class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 text-white">
+                <option value="ESC-12X36-NOT">Plantão Noturno 12x36 (19h às 07h)</option>
+                <option value="ESC-12X36-DIA">Plantão Diurno 12x36 (07h às 19h)</option>
+                <option value="ESC-6X1-FAB">Operacional Fábrica 6x1 (06h às 14h20)</option>
+                <option value="ESC-5X2-COM">Comercial 5x2 (08h às 17h)</option>
+              </select>
+            </div>
+
+            <div class="pt-5">
+              <button onclick="executarSimulacao()" class="px-5 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold rounded-lg text-xs transition shadow-lg shadow-sky-500/20 flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <span>Processar Simulação</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Alerta de Custo Total -->
+        <div class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs flex items-start space-x-2.5">
+          <svg class="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <div>
+            <span class="font-bold">Diretriz do SPEC.md 4.6:</span> Não chamamos nenhum valor de "Custo Total" até que os componentes (encargos patronais, FGTS e provisões) estejam formalmente definidos. A simulação abaixo apresenta a projeção de jornada e eventos de folha rastreáveis.
+          </div>
+        </div>
+
+        <!-- Resultados Comparativos Gerais -->
+        <div id="simResumoCards" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <span class="text-xs text-slate-400">Total Horas Referência:</span>
+            <p id="simHorasRef" class="text-xl font-bold text-slate-200 mt-1">--</p>
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <span class="text-xs text-slate-400">Total Horas Propostas:</span>
+            <p id="simHorasPropostas" class="text-xl font-bold text-sky-400 mt-1">--</p>
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <span class="text-xs text-slate-400">Variação de Jornada:</span>
+            <p id="simDeltaHoras" class="text-xl font-bold mt-1">--</p>
+          </div>
+          <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800">
+            <span class="text-xs text-slate-400">Horas Noturnas Projetadas:</span>
+            <p id="simHorasNoturnas" class="text-xl font-bold text-indigo-400 mt-1">--</p>
+          </div>
+        </div>
+
+        <!-- Detalhamento por Colaborador -->
+        <div id="simColaboradoresContainer" class="hidden space-y-4 pt-4 border-t border-slate-800">
+          <h3 class="text-base font-bold text-white">Detalhamento por Colaborador e Memória de Cálculo Auditável</h3>
+          <div id="simColaboradoresList" class="space-y-4">
+            <!-- Renderizado dinamicamente via JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================== ABA 6: QUALIDADE DE IMPORTAÇÃO ==================== -->
+    <section id="pane-validador" class="hidden space-y-6">
+      
+      <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-5">
+        <div>
+          <h2 class="text-xl font-bold text-white">Validador de Ingestão e Qualidade de Dados de Folha</h2>
+          <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+            Testa a estrutura da planilha exportada antes de processar qualquer simulação. Identifica campos ausentes, duplicidades e rubricas não catalogadas, sem descartar dados silenciosamente.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Entrada de Dados (JSON / Simulação de Linhas de Planilha) -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-slate-300">Payload de Teste (Linhas de Folha):</label>
+              <div class="flex space-x-2">
+                <button onclick="carregarExemploValido()" class="text-[11px] text-sky-400 hover:underline">Carregar Válido</button>
+                <span class="text-slate-600">|</span>
+                <button onclick="carregarExemploComErros()" class="text-[11px] text-amber-400 hover:underline">Carregar com Inconsistências</button>
+              </div>
+            </div>
+
+            <textarea id="importPayloadInput" rows="12" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 font-mono text-xs text-sky-300 focus:outline-none focus:border-sky-500"></textarea>
+
+            <button onclick="executarValidacaoImportacao()" class="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-lg shadow-sky-600/20">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Executar Diagnóstico de Ingestão</span>
+            </button>
+          </div>
+
+          <!-- Relatório de Qualidade de Dados -->
+          <div class="space-y-3">
+            <label class="text-xs font-semibold text-slate-300">Relatório de Qualidade e Conformidade:</label>
+            
+            <div id="importReportBox" class="glass-card rounded-xl p-4 border border-slate-800 min-h-[300px] flex flex-col justify-center text-center text-slate-400 text-xs">
+              Envie o payload ou clique em um dos exemplos à esquerda para inspecionar os resultados.
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="glass-panel border-t border-slate-800/80 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
+      <div>
+        <span class="font-semibold text-slate-200">Malemi Data Solutions</span> — Simulador de Escalas e Custos de Folha
+      </div>
+      <div class="flex items-center space-x-4">
+        <span>Fase 1: Diagnóstico e Validação</span>
+        <span>•</span>
+        <span class="text-sky-400 font-mono">Node.js + Tailwind CSS</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts da Aplicação -->
+  <script src="app.js"></script>
+</body>
+</html>
