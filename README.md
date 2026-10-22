@@ -1,119 +1,206 @@
-# Malemi — Simulador de Escalas e Custos de Folha de Pagamento
+# Simulador de Escalas e Custos de RH
 
-Aplicação e API REST para planejamento, estruturação de escalas de trabalho e estimativa de impactos na folha de pagamento, desenvolvida para a **Malemi Data Solutions**.
+Aplicação web estática voltada a Recursos Humanos (RH), Departamento Pessoal e Gestão Operacional, projetada para cadastrar diferentes jornadas de trabalho, calcular de forma transparente as horas e os adicionais legais/simulados e comparar alternativas de escalas para identificar a opção de **menor custo estimado para a empresa**.
 
-Projetada com base estrita no [`SPEC.md`](.doc/SPEC.md), focando na **Fase 1 (Levantamento, Validação e Preparação Segura)**. O sistema mantém dados de folha de referência intactos, rastreia todas as rubricas e bloqueia a presunção de regras jurídicas ou de convenções coletivas (CCT) antes de sua homologação formal.
-
----
-
-## 🛠️ Tecnologias Utilizadas
-
-A solução foi construída utilizando exclusivamente a stack solicitada, sem over-engineering:
-
-- **Back-end:** JavaScript (Node.js nativo utilizando `node:http`, `node:fs`, `node:test`). Zero dependências externas no runtime, garantindo portabilidade imediata, performance e alta segurança.
-- **Front-end:** HTML5 semântico, Vanilla JavaScript e Tailwind CSS (via CDN oficial) com design system personalizado (*glassmorphism*, dark mode e responsividade).
-- **Testes:** Test Runner nativo do Node.js (`node --test`).
+> **Identificação do Desenvolvedor:**  
+> **Desenvolvedor: Diego Miranda Cezar**
 
 ---
 
-## 🚀 Como Executar Localmente
+## 1. Objetivo do Projeto
 
-### Pré-requisitos
-- **Node.js** v18.0.0 ou superior (testado no Node.js v24.21.0).
-- Nenhum `npm install` externo é necessário para iniciar a aplicação, pois ela utiliza os módulos nativos do Node.js.
+O objetivo principal desta ferramenta é apoiar o planejamento e a tomada de decisão operacional sobre alocação de equipes e formatação de escalas, permitindo:
 
-### 1. Iniciar o Servidor e a API
-```bash
-npm start
-```
-Ou em modo de desenvolvimento com recarregamento automático:
-```bash
-npm run dev
-```
-
-O servidor iniciará em:
-- **Interface Web:** [http://127.0.0.1:3000](http://127.0.0.1:3000)
-- **API Health Check:** [http://127.0.0.1:3000/api/health](http://127.0.0.1:3000/api/health)
-
-### 2. Executar os Testes Automatizados
-```bash
-npm test
-```
-A suíte de testes unitários e de integração valida cálculos de turnos noturnos, calendário mensal, integridade de eventos independentes e qualidade de ingestão de dados.
+- Cadastrar e parametrizar diferentes escalas de trabalho (com valor-hora e limite diário configuráveis).
+- Registrar jornadas detalhadas com data, horário de entrada, horário de saída e marcação de feriados.
+- Identificar automaticamente os domingos do calendário civil e permitir marcação manual de feriados.
+- Calcular a duração real das jornadas, inclusive com tratamento especializado para **jornadas noturnas que atravessam a meia-noite**, dividindo os períodos para aplicar a remuneração exata de cada dia civil (ex.: sábado comum virando para domingo remunerado a 200%).
+- Apurar horas normais (100%), horas extras comuns (adicional de 50%) e domingos/feriados (remuneração estimada a 200% com adicional de 100%).
+- Comparar múltiplas escalas em um ranking ordenado do menor para o maior custo estimado, destacando a alternativa mais econômica e alertando caso haja divergência no valor da hora entre os cenários.
+- Persistir dados no navegador do usuário via `localStorage` e disponibilizar backup/restauração via arquivo JSON.
 
 ---
 
-## 📚 Endpoints da API REST
+## 2. Tecnologias Utilizadas e Restrições Técnicas
 
-Todas as respostas são servidas em JSON (`application/json; charset=utf-8`) com suporte a CORS liberado para integrações.
+O projeto foi rigorosamente concebido como uma **aplicação estática cliente (client-side pura)**, respeitando todas as diretrizes do `SPEC.md`:
 
-| Método | Endpoint | Descrição |
-|---|---|---|
-| `GET` | `/api/health` | Verifica status de operação da API, versão e fase do projeto. |
-| `GET` | `/api/filiais` | Lista as filiais cadastradas (Matriz São Paulo, Filial 1 Campinas, Filial 2 Rio de Janeiro). |
-| `GET` | `/api/funcionarios` | Retorna colaboradores com dados fictícios anonimizados (aceita filtro `?filialId=FIL-01`). |
-| `POST` | `/api/funcionarios` | Cadastra um novo colaborador com validação de campos obrigatórios. |
-| `GET` | `/api/escalas` | Lista as escalas-base pré-configuradas (Comercial 5x2, Operacional 6x1, Plantão 12x36 Diurno/Noturno). |
-| `POST` | `/api/escalas/validar` | Valida parâmetros de jornada, formato `HH:mm` e intervalo intrajornada mínimo. |
-| `POST` | `/api/escalas/calendario` | Gera o calendário de um mês específico (dias de trabalho, DSR, feriados, horas noturnas e ajustes manuais). |
-| `GET` | `/api/eventos` | Retorna o catálogo de eventos da folha com classificação (Independente vs Dependente da escala). |
-| `GET` | `/api/regras` | Lista hipóteses de cálculo mapeadas, fontes normativas e pendências de homologação. |
-| `POST` | `/api/simulacoes` | Processa simulação comparativa entre a folha de referência e uma nova escala com rastreabilidade auditável. |
-| `POST` | `/api/importacao/validar` | Valida lote de linhas de planilha e emite relatório de qualidade (duplicidades, campos vazios, eventos novos). |
+- **HTML5:** Estrutura semântica, acessível e otimizada.
+- **CSS3:** Estilização moderna, transições suaves, tipografia refinada e suporte responsivo (mobile e desktop).
+- **Tailwind CSS:** Carregado via CDN para agilidade visual e utilitários de layout.
+- **JavaScript Puro (Vanilla JS ES6+):** Lógica desacoplada em funções puras, sem dependência de frameworks ou transpiladores.
+- **localStorage:** Mecanismo de persistência local no navegador.
+
+### Restrições Arquiteturais Cumpridas
+- ❌ **Sem Node.js em tempo de execução.**
+- ❌ **Sem backend próprio ou servidor HTTP.**
+- ❌ **Sem banco de dados.**
+- ❌ **Sem frameworks JS adicionais (React, Vue, Angular, Svelte, jQuery).**
+- ❌ **Sem processos de build, compilação ou empacotadores.**
 
 ---
 
-## 📂 Estrutura do Repositório
+## 3. Estrutura de Arquivos do Projeto
 
 ```text
-├── .doc/                      # Documentação de origem e especificações
-│   ├── SPEC.md                # Especificação funcional completa da Malemi
-│   └── prompt_github.md       # Diretrizes de análise, DevOps e segurança
-├── docs/                      # Documentação funcional e arquitetural
-│   ├── dicionario_dados.md    # Estrutura das entidades e critérios de ingestão
-│   ├── catalogo_eventos.md    # Inventário e classificação das rubricas de folha
-│   ├── regras_calculo.md      # Hipóteses registradas, fontes e pendências
-│   ├── plano_testes.md        # Matriz de testes de qualidade e critérios de aceite
-│   └── decisoes_tecnicas.md   # Registros de Decisão de Arquitetura (ADRs)
-├── public/                    # Interface Frontend
-│   ├── index.html             # Painel SPA com abas e explorador de API
-│   ├── styles.css             # Tokens visuais e design system personalizado
-│   └── app.js                 # Lógica de integração e consumo da API
-├── src/                       # Código Fonte do Backend (JavaScript / Node.js)
-│   ├── server.js              # Servidor HTTP nativo e roteador de estáticos
-│   ├── api/
-│   │   └── routes.js          # Controladores e despachantes REST da API
-│   ├── models/
-│   │   └── store.js           # Repositório em memória com dados mock anonimizados
-│   └── services/
-│       ├── scheduleService.js # Validação de turnos, jornadas e calendário mensal
-│       ├── simulationService.js # Motor de simulação e rastreabilidade auditável
-│       └── importValidator.js # Ingestão e relatório de qualidade dos dados
-├── tests/                     # Testes Automatizados
-│   └── api.test.js            # Suíte de testes com node:test e node:assert
-├── .env.example               # Modelo seguro de variáveis de ambiente
-├── .gitignore                 # Proteção estrita contra credenciais e dados reais
-├── package.json               # Configurações do projeto e scripts npm
-└── preparacao-api-simulador.md # Plano de execução do projeto
+Simulador de Escalas/
+├── index.html                   # Página principal da aplicação estática
+├── SPEC.md                      # Especificação funcional e técnica de referência
+├── README.md                    # Manual do usuário, documentação técnica e de negócio
+├── simulador-escalas-plan.md    # Plano de implementação estruturado
+├── .gitignore                   # Regras de segurança e exclusão do Git
+├── css/
+│   └── styles.css               # Estilos complementares, animações e responsividade
+├── js/
+│   ├── calculator.js            # Módulo puro de cálculos de RH e regras de negócio
+│   ├── storage.js               # Gerenciador de persistência e dados no localStorage
+│   └── app.js                   # Controlador de interface, renderização e eventos
+├── docs/
+│   ├── regras-calculo.md        # Catálogo formal de fórmulas, premissas e limitações
+│   └── testes.md                # Registro de execução e validação dos 13 cenários
+└── tests/
+    ├── test-calculator.js       # Script de validação matemática dos 13 cenários obrigatórios
+    ├── test-business-flow.js    # Script de validação de fluxo de dados e persistência
+    └── verify-dom-ids.js        # Script de auditoria de consistência entre DOM e JavaScript
 ```
 
 ---
 
-## 🔒 Segurança e Proteção de Dados
+## 4. Como Executar a Aplicação
 
-1. **Anonimização Integral:** O repositório contém apenas identificadores genéricos e nomes fictícios para validação de testes.
-2. **Proteção no `.gitignore`:** Arquivos reais de folha (`.xlsx`, `.xls`, `.csv`), credenciais locais (`.env*`, `meu_git.txt`), certificados e diretórios de build estão estritamente bloqueados contra versionamento.
-3. **Auditoria Contínua:** Nenhuma informação salarial real ou pessoal trafega para provedores externos.
+A execução é extremamente simples e não requer nenhuma instalação:
+
+1. Baixe ou clone o repositório em seu computador.
+2. Dê um duplo clique no arquivo **`index.html`** (ou abra-o em qualquer navegador web moderno: Chrome, Edge, Firefox, Safari ou Opera).
+3. A aplicação carregará imediatamente com três cenários de exemplo pré-configurados para testes e demonstração.
+
+> *Nota sobre conexão:* O Tailwind CSS e as fontes Google Fonts utilizam CDNs públicas para carregar estilos. Para visualização com o layout estilizado completo, mantenha conexão com a internet. A lógica de cálculo funciona 100% offline.
 
 ---
 
-## 📋 Comandos para Publicação no GitHub
+## 5. Como Cadastrar e Comparar Escalas
 
-Conforme os critérios de segurança do projeto, o `commit` e o `push` devem ser executados manualmente pelo usuário.
+### 5.1. Criando ou Editando uma Escala
+1. No cabeçalho, clique no botão **"Nova Escala"** (ou em **"Configurar Parâmetros"** para alterar a escala ativa).
+2. Informe o **Nome da Escala** (ex.: *Escala 5x2 Comercial*, *Escala 12x36 Portaria*).
+3. Opcionalmente, informe o **Cenário / Colaborador**.
+4. Configure os parâmetros da simulação:
+   - **Valor da Hora Normal (R$)** (ex.: R$ 20,00).
+   - **Limite Diário de Horas Normais** (ex.: 8,0 horas).
+   - **Adicional de Horas Extras Comuns** (padrão: 50%).
+   - **Remuneração para Domingos e Feriados** (padrão: 100% de adicional = 200%).
+5. Clique em **Salvar Escala**.
 
-Após conferir os arquivos adicionados ao staging, execute no terminal do projeto:
+### 5.2. Adicionando Jornadas
+1. Na aba **"Gestão e Detalhamento da Escala"**, utilize o formulário de cadastro rápido.
+2. Selecione a **Data da Jornada**. Se a data for domingo, o sistema identificará automaticamente.
+3. Preencha o **Horário de Entrada** (ex.: `08:00`) e o **Horário de Saída** (ex.: `16:00` ou `04:00` do dia seguinte).
+4. Caso a jornada ocorra em feriado, marque a opção **"Marcar como Feriado"**.
+5. Se o horário de saída for menor ou igual ao de entrada (virada da meia-noite), surgirá a opção de indicar se o dia seguinte também é feriado.
+6. Clique em **"Adicionar"**. A jornada será processada e exibida na tabela com o detalhamento imediato dos custos.
+
+### 5.3. Comparando Escalas
+1. Clique na aba **"Comparação Geral de Escalas"**.
+2. A tela apresentará:
+   - A **Tabela Ranqueada** com todas as escalas cadastradas, ordenadas da mais barata para a mais cara.
+   - O selo **"1º (Menor Custo)"** na alternativa mais econômica.
+   - O cálculo da **Diferença (R$ e %)** em relação à melhor alternativa.
+   - Um alerta visual caso haja escalas com valores-hora distintos.
+   - **Cards Resumo** de cada escala com os totais de horas normais, extras e domingos/feriados.
+
+---
+
+## 6. Fórmulas e Regras de Negócio de RH
+
+### 6.1. Duração da Jornada
+- Saída > Entrada: $\text{Duração} = \text{Saída} - \text{Entrada}$
+- Saída $\le$ Entrada (atravessa meia-noite):
+  $$\text{Duração} = (24\text{h} - \text{Entrada}) + \text{Saída}$$
+  A jornada é fracionada em dois tramos de calendário civil: antes da meia-noite (data inicial) e após a meia-noite (data seguinte).
+
+### 6.2. Horas Normais em Dias Comuns
+$$\text{Horas Normais} = \min(\text{Horas Trabalhadas}, \text{Limite Diário})$$
+$$\text{Custo Normal} = \text{Horas Normais} \times \text{Valor da Hora}$$
+
+### 6.3. Horas Extras com Adicional de 50% em Dias Comuns
+$$\text{Horas Extras} = \max(0, \text{Horas Trabalhadas} - \text{Limite Diário})$$
+$$\text{Custo Extras} = \text{Horas Extras} \times \text{Valor da Hora} \times 1{,}50$$
+
+### 6.4. Domingos e Feriados (Adicional de 100%)
+$$\text{Custo Domingos e Feriados} = \text{Horas Elegíveis} \times \text{Valor da Hora} \times 2{,}00$$
+- *Premissa da simulação:* Não há acúmulo de 50% com 100%. Feriados coincidentes com domingo aplicam o multiplicador de 2,0x uma única vez.
+
+### 6.5. Exemplo do SPEC (Seção 8.5)
+- **Valor da hora:** R$ 20,00 | **Limite:** 8h | **Jornada em dia comum:** 10h
+  - Horas normais: $8\text{h} \times \text{R\$} 20,00 = \text{R\$} 160,00$
+  - Horas extras: $2\text{h} \times \text{R\$} 20,00 \times 1{,}5 = \text{R\$} 60,00$
+  - **Custo total:** $\text{R\$} 220,00$
+- **Jornada de 8h em domingo:**
+  - $8\text{h} \times \text{R\$} 20,00 \times 2{,}0 = \text{R\$} 320,00$
+
+---
+
+## 7. Limitações Conhecidas da Simulação
+
+Em conformidade com a Seção 15 do `SPEC.md`, esta versão **não** calcula:
+1. Encargos patronais e tributários (FGTS, INSS, RAT, Terceiros/Sistema S).
+2. Descanso Semanal Remunerado (DSR) e seus reflexos sobre horas extras.
+3. Adicional noturno (20%) e hora ficta noturna de 52min30s (art. 73 da CLT).
+4. Férias, 13º salário ou verbas rescisórias.
+5. Regras particulares de acordos ou convenções coletivas de trabalho.
+6. Intervalos intrajornada obrigatórios para repouso e alimentação.
+
+---
+
+## 8. Persistência Local dos Dados (`localStorage`)
+
+- Os dados das escalas e jornadas ficam salvos **exclusivamente na memória local do navegador** em que foram cadastrados, sob a chave `simulador_escalas_dados_v1`.
+- Não há envio ou sincronização com servidores externos ou bancos de dados remotos.
+- Limpar os dados de navegação ou cache removerá os registros locais.
+- A aplicação oferece a funcionalidade **"Dados (JSON)"** no topo para exportar um arquivo de backup `.json` a qualquer momento ou restaurar dados em outro computador.
+
+---
+
+## 9. Bateria de Testes Executados
+
+Foram executados e validados com 100% de sucesso os 13 cenários obrigatórios do `SPEC.md`:
+
+| Nº | Cenário Testado | Resultado Esperado | Resultado Obtido | Status |
+|:--:|---|---|---|:--:|
+| 1 | Jornada inferior ao limite (6h com limite 8h) | R$ 120,00 | R$ 120,00 | ✅ APROVADO |
+| 2 | Jornada exatamente no limite (8h com limite 8h) | R$ 160,00 | R$ 160,00 | ✅ APROVADO |
+| 3 | Jornada acima do limite (10h com limite 8h - SPEC 8.5) | R$ 220,00 | R$ 220,00 | ✅ APROVADO |
+| 4 | Jornada em domingo (8h domingo - SPEC 8.5) | R$ 320,00 | R$ 320,00 | ✅ APROVADO |
+| 5 | Jornada em feriado manual (8h feriado) | R$ 320,00 | R$ 320,00 | ✅ APROVADO |
+| 6 | Jornada atravessando meia-noite em dia comum (22h às 06h) | R$ 160,00 (8h normais) | R$ 160,00 | ✅ APROVADO |
+| 7 | Jornada de Sábado para Domingo (20h às 04h) | R$ 240,00 (4h normais + 4h dom) | R$ 240,00 | ✅ APROVADO |
+| 8 | Jornada de dia comum para feriado (20h às 04h) | R$ 240,00 (4h normais + 4h fer) | R$ 240,00 | ✅ APROVADO |
+| 9 | Comparação com mesmo valor por hora | Identificação da 5x2 como menor custo | R$ 1.000 vs R$ 1.200 | ✅ APROVADO |
+| 10 | Comparação com valores-hora distintos | Emissão de alerta de discrepância | Alerta exibido com sucesso | ✅ APROVADO |
+| 11 | Validação defensiva de campos inválidos | Rejeição amigável em pt-BR | Validado | ✅ APROVADO |
+| 12 | Persistência e exclusão no localStorage | Manutenção e limpeza com confirmação | Validado | ✅ APROVADO |
+| 13 | Feriado coincidente com domingo | Adicional único de 100% (200% total) | R$ 320,00 (não 400 nem 640) | ✅ APROVADO |
+
+O detalhamento completo pode ser consultado em [docs/testes.md](docs/testes.md).
+
+---
+
+## 10. Sugestão de Comandos Git para Execução Manual
+
+Conforme estipulado nas diretrizes do projeto (Seção 9 do prompt e Seção 19 do SPEC), **nenhum comando de commit ou push foi executado automaticamente**.
+
+Para revisar o estado dos arquivos e realizar o versionamento manualmente:
 
 ```bash
-git commit -m "feat: inicializar API REST e interface do simulador de escalas com documentacao e testes"
-git push -u origin main
+# 1. Verificar os arquivos alterados e não monitorados
+git status
+
+# 2. Adicionar as modificações e novos arquivos estáticos
+git add index.html SPEC.md README.md .gitignore css/ js/ docs/ tests/
+
+# 3. Criar o commit com mensagem padronizada
+git commit -m "feat: implementar simulador estatico de escalas de RH com comparacao de custos e testes"
+
+# 4. Enviar para o repositorio remoto (quando autorizado)
+git push origin main
 ```

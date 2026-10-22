@@ -1,46 +1,26 @@
-# Dependências
+# Arquivos sensíveis e credenciais
+.doc/meu_git.txt
+.doc/meu_git*
+*.env
+*.env.*
+*.pem
+*.key
+
+# Sistema operacional
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Dependências ou caches não utilizados (projeto puramente estático)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# Variáveis de ambiente e credenciais
-.env
-.env.local
-.env.*.local
-*.key
-*.pem
-*.cert
-
-# Arquivos sensíveis e configurações locais de Git / Usuário
-.doc/meu_git.txt
-.doc/meu_git*
-meu_git.txt
-meu_git*
-
-# Planilhas reais e dados confidenciais de folha
-*.xlsx
-*.xls
-*.csv
-dados_reais/
-folha_real/
-
-# Logs e arquivos de sistema
-logs/
-*.log
-.DS_Store
-Thumbs.db
-desktop.ini
-
-# IDEs e editores
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-
-# Build e cache
-dist/
-build/
+.parcel-cache/
 .cache/
-.temp/
-tmp/
