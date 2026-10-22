@@ -358,6 +358,7 @@
 
     return {
       id: journey.id || null,
+      employee: journey.employee || '',
       date: journey.date,
       dayOfWeek: getDayOfWeekName(journey.date),
       startTime: journey.startTime,

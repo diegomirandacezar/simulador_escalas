@@ -49,7 +49,10 @@
     kpiTotalHorasGeral: document.getElementById('kpiTotalHorasGeral'),
 
     // Formulário Adicionar Jornada
+    btnAbrirSemanaCompleta: document.getElementById('btnAbrirSemanaCompleta'),
     formAdicionarJornada: document.getElementById('formAdicionarJornada'),
+    jornadaEscalaSelect: document.getElementById('jornadaEscalaSelect'),
+    jornadaFuncionario: document.getElementById('jornadaFuncionario'),
     jornadaData: document.getElementById('jornadaData'),
     labelDiaSemanaPreview: document.getElementById('labelDiaSemanaPreview'),
     jornadaEntrada: document.getElementById('jornadaEntrada'),
@@ -70,7 +73,7 @@
     estadoVazioComparacao: document.getElementById('estadoVazioComparacao'),
     cardsComparativosContainer: document.getElementById('cardsComparativosContainer'),
 
-    // Modais
+    // Modal Escala
     modalEscala: document.getElementById('modalEscala'),
     modalEscalaTitulo: document.getElementById('modalEscalaTitulo'),
     formModalEscala: document.getElementById('formModalEscala'),
@@ -82,9 +85,12 @@
     modalEscalaAdicionalExtra: document.getElementById('modalEscalaAdicionalExtra'),
     modalEscalaAdicionalDomFer: document.getElementById('modalEscalaAdicionalDomFer'),
 
+    // Modal Editar Jornada
     modalEditarJornada: document.getElementById('modalEditarJornada'),
     formModalEditarJornada: document.getElementById('formModalEditarJornada'),
     modalEditarJornadaId: document.getElementById('modalEditarJornadaId'),
+    modalEditarJornadaEscalaSelect: document.getElementById('modalEditarJornadaEscalaSelect'),
+    modalEditarJornadaFuncionario: document.getElementById('modalEditarJornadaFuncionario'),
     modalEditarJornadaData: document.getElementById('modalEditarJornadaData'),
     modalEditarDiaSemanaLabel: document.getElementById('modalEditarDiaSemanaLabel'),
     modalEditarJornadaEntrada: document.getElementById('modalEditarJornadaEntrada'),
@@ -94,12 +100,25 @@
     modalEditarJornadaFeriadoSeguinte: document.getElementById('modalEditarJornadaFeriadoSeguinte'),
     modalEditarJornadaNotas: document.getElementById('modalEditarJornadaNotas'),
 
+    // Modal Semana Completa
+    modalSemanaCompleta: document.getElementById('modalSemanaCompleta'),
+    formModalSemanaCompleta: document.getElementById('formModalSemanaCompleta'),
+    semanaEscalaSelect: document.getElementById('semanaEscalaSelect'),
+    semanaFuncionario: document.getElementById('semanaFuncionario'),
+    semanaDataInicio: document.getElementById('semanaDataInicio'),
+    semanaModelo: document.getElementById('semanaModelo'),
+    semanaDiasContainer: document.getElementById('semanaDiasContainer'),
+    semanaResumoHoras: document.getElementById('semanaResumoHoras'),
+    btnSalvarSemanaCompleta: document.getElementById('btnSalvarSemanaCompleta'),
+
+    // Modal Confirmação
     modalConfirmacao: document.getElementById('modalConfirmacao'),
     modalConfirmacaoTitulo: document.getElementById('modalConfirmacaoTitulo'),
     modalConfirmacaoMensagem: document.getElementById('modalConfirmacaoMensagem'),
     btnModalConfirmacaoCancelar: document.getElementById('btnModalConfirmacaoCancelar'),
     btnModalConfirmacaoExecutar: document.getElementById('btnModalConfirmacaoExecutar'),
 
+    // Modal Exportar/Importar
     modalExportarImportar: document.getElementById('modalExportarImportar'),
     btnBaixarJSON: document.getElementById('btnBaixarJSON'),
     areaImportarJSON: document.getElementById('areaImportarJSON'),
@@ -136,11 +155,23 @@
     dom.tabBtnEscala.addEventListener('click', () => mudarAba('escala'));
     dom.tabBtnComparacao.addEventListener('click', () => mudarAba('comparacao'));
 
-    // Mudança de escala selecionada
+    // Mudança de escala selecionada no topo
     dom.selectEscalaAtiva.addEventListener('change', (e) => {
       state.activeScaleId = e.target.value;
+      if (dom.jornadaEscalaSelect) dom.jornadaEscalaSelect.value = state.activeScaleId;
+      preencherFuncionarioPadrao();
       renderizarEscalaAtiva();
     });
+
+    // Quando o usuário muda a escala diretamente no formulário de jornada
+    if (dom.jornadaEscalaSelect) {
+      dom.jornadaEscalaSelect.addEventListener('change', (e) => {
+        state.activeScaleId = e.target.value;
+        if (dom.selectEscalaAtiva) dom.selectEscalaAtiva.value = state.activeScaleId;
+        preencherFuncionarioPadrao();
+        renderizarEscalaAtiva();
+      });
+    }
 
     // Monitora data e horários para previsão de domingos e virada de meia-noite
     dom.jornadaData.addEventListener('input', () => {
@@ -156,8 +187,23 @@
     dom.modalEditarJornadaEntrada.addEventListener('input', verificarViradaMeiaNoiteEditar);
     dom.modalEditarJornadaSaida.addEventListener('input', verificarViradaMeiaNoiteEditar);
 
-    // Submissão do formulário de adição rápida de jornada
+    // Submissão do formulário de adição de jornada
     dom.formAdicionarJornada.addEventListener('submit', tratarAdicionarJornada);
+
+    // Botão e formulário de Semana Completa
+    if (dom.btnAbrirSemanaCompleta) {
+      dom.btnAbrirSemanaCompleta.addEventListener('click', abrirModalSemanaCompleta);
+    }
+    if (dom.formModalSemanaCompleta) {
+      dom.formModalSemanaCompleta.addEventListener('submit', salvarSemanaCompleta);
+      dom.semanaEscalaSelect.addEventListener('change', () => {
+        const esc = state.scales.find((s) => s.id === dom.semanaEscalaSelect.value);
+        if (esc && esc.employee) dom.semanaFuncionario.value = esc.employee;
+        gerarGradeSemana();
+      });
+      dom.semanaDataInicio.addEventListener('input', gerarGradeSemana);
+      dom.semanaModelo.addEventListener('change', gerarGradeSemana);
+    }
 
     // Botões de Escala
     dom.btnNovaEscala.addEventListener('click', abrirModalNovaEscala);
@@ -204,6 +250,16 @@
         document.querySelectorAll('.modal-backdrop:not(.hidden)').forEach(fecharModal);
       }
     });
+  }
+
+  /**
+   * Preenche o campo de funcionário no formulário de jornada conforme a escala selecionada
+   */
+  function preencherFuncionarioPadrao() {
+    const escala = getEscalaAtiva();
+    if (escala && dom.jornadaFuncionario && (!dom.jornadaFuncionario.value || dom.jornadaFuncionario.value.startsWith('Funcionário') || dom.jornadaFuncionario.value.startsWith('Cenário'))) {
+      dom.jornadaFuncionario.value = escala.employee || '';
+    }
   }
 
   /**
@@ -293,6 +349,8 @@
    */
   function renderizarInterface() {
     atualizarSelectEscalas();
+    preencherFuncionarioPadrao();
+
     if (state.activeTab === 'escala') {
       renderizarEscalaAtiva();
     } else {
@@ -302,27 +360,38 @@
   }
 
   /**
-   * Atualiza o select de escalas
+   * Atualiza os selects de escalas em toda a aplicação
    */
   function atualizarSelectEscalas() {
-    dom.selectEscalaAtiva.innerHTML = '';
+    const selects = [
+      dom.selectEscalaAtiva,
+      dom.jornadaEscalaSelect,
+      dom.semanaEscalaSelect,
+      dom.modalEditarJornadaEscalaSelect
+    ];
 
-    if (state.scales.length === 0) {
-      const opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = 'Nenhuma escala cadastrada';
-      dom.selectEscalaAtiva.appendChild(opt);
-      return;
-    }
+    selects.forEach((sel) => {
+      if (!sel) return;
+      sel.innerHTML = '';
 
-    state.scales.forEach((scale) => {
-      const opt = document.createElement('option');
-      opt.value = scale.id;
-      opt.textContent = `${scale.name} (${RHCalculator.formatCurrency(scale.hourlyRate)}/h — Limite: ${scale.dailyNormalLimit}h)`;
-      if (scale.id === state.activeScaleId) {
-        opt.selected = true;
+      if (state.scales.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = 'Nenhuma escala cadastrada';
+        sel.appendChild(opt);
+        return;
       }
-      dom.selectEscalaAtiva.appendChild(opt);
+
+      state.scales.forEach((scale) => {
+        const opt = document.createElement('option');
+        opt.value = scale.id;
+        const employeeLabel = scale.employee ? ` [${scale.employee}]` : '';
+        opt.textContent = `${scale.name}${employeeLabel} (${RHCalculator.formatCurrency(scale.hourlyRate)}/h)`;
+        if (scale.id === state.activeScaleId) {
+          opt.selected = true;
+        }
+        sel.appendChild(opt);
+      });
     });
   }
 
@@ -388,7 +457,7 @@
 
     dom.estadoVazioJornadas.classList.add('hidden');
 
-    calculo.journeys.forEach((jornada, index) => {
+    calculo.journeys.forEach((jornada) => {
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50 transition-colors border-b border-slate-100';
 
@@ -437,11 +506,19 @@
         `;
       }
 
+      const funcionarioExibido = jornada.employee || escala.employee || 'Não informado';
+
       tr.innerHTML = `
         <td class="py-3 px-3.5">
           <div class="font-semibold text-slate-900">${jornada.date}</div>
           <div class="text-[11px] text-slate-500">${jornada.dayOfWeek}</div>
           ${jornada.notes ? `<div class="text-[11px] text-slate-400 italic mt-0.5">${escapeHtml(jornada.notes)}</div>` : ''}
+        </td>
+        <td class="py-3 px-2.5">
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+            <svg class="w-3.5 h-3.5 text-sky-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+            ${escapeHtml(funcionarioExibido)}
+          </span>
         </td>
         <td class="py-3 px-2.5 font-mono text-slate-800">
           ${jornada.startTime} → ${jornada.endTime}
@@ -554,7 +631,11 @@
         </td>
         <td class="py-3.5 px-3">
           <div class="font-bold text-slate-900">${escapeHtml(scale.name)}</div>
-          ${scale.employee ? `<div class="text-[11px] text-slate-500">${escapeHtml(scale.employee)}</div>` : ''}
+          ${
+            scale.employee
+              ? `<span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">👤 ${escapeHtml(scale.employee)}</span>`
+              : ''
+          }
         </td>
         <td class="py-3.5 px-2 text-right font-mono text-slate-700">
           ${RHCalculator.formatCurrency(scale.hourlyRate)}
@@ -613,7 +694,11 @@
           </div>
 
           <h3 class="font-bold text-slate-900 text-base mb-1">${escapeHtml(scale.name)}</h3>
-          ${scale.employee ? `<p class="text-xs text-slate-500 mb-3">${escapeHtml(scale.employee)}</p>` : '<div class="mb-3"></div>'}
+          ${
+            scale.employee
+              ? `<div class="mb-3"><span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">👤 ${escapeHtml(scale.employee)}</span></div>`
+              : '<div class="mb-3"></div>'
+          }
 
           <div class="space-y-2 py-3 border-y border-slate-100 text-xs">
             <div class="flex justify-between text-slate-600">
@@ -653,19 +738,24 @@
   }
 
   /**
-   * Trata a submissão do formulário de adição rápida de jornada
+   * Trata a submissão do formulário de adição de jornada
    */
   function tratarAdicionarJornada(e) {
     e.preventDefault();
 
-    const escala = getEscalaAtiva();
+    const targetScaleId = dom.jornadaEscalaSelect.value || state.activeScaleId;
+    const escala = state.scales.find((s) => s.id === targetScaleId);
+
     if (!escala) {
       alert('Selecione ou crie uma escala antes de adicionar jornadas.');
       return;
     }
 
+    const funcionario = dom.jornadaFuncionario.value.trim() || escala.employee || '';
+
     const novaJornada = {
       date: dom.jornadaData.value,
+      employee: funcionario,
       startTime: dom.jornadaEntrada.value,
       endTime: dom.jornadaSaida.value,
       isHoliday: dom.jornadaFeriado.checked,
@@ -681,7 +771,10 @@
 
     try {
       state.scales = RHStorage.addJourneyToScale(escala.id, novaJornada);
-      renderizarEscalaAtiva();
+      state.activeScaleId = escala.id;
+      if (dom.selectEscalaAtiva) dom.selectEscalaAtiva.value = escala.id;
+
+      renderizarInterface();
 
       // Limpa os campos secundários mantendo a data para facilitar inclusão contínua
       dom.jornadaNotas.value = '';
@@ -690,6 +783,261 @@
       dom.containerFeriadoDiaSeguinte.classList.add('hidden');
     } catch (err) {
       alert('Erro ao salvar jornada: ' + err.message);
+    }
+  }
+
+  /**
+   * Assistente de Semana Completa de Jornadas
+   */
+  function abrirModalSemanaCompleta() {
+    atualizarSelectEscalas();
+    const escala = getEscalaAtiva();
+
+    if (escala) {
+      dom.semanaEscalaSelect.value = escala.id;
+      dom.semanaFuncionario.value = escala.employee || 'Funcionário X';
+    } else {
+      dom.semanaFuncionario.value = 'Funcionário X';
+    }
+
+    // Calcula a segunda-feira da semana corrente
+    const hoje = new Date();
+    const diaSemana = hoje.getDay(); // 0 = Domingo, 1 = Segunda, ...
+    const diffParaSegunda = diaSemana === 0 ? -6 : 1 - diaSemana;
+    const segundaFeira = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() + diffParaSegunda);
+
+    const ano = segundaFeira.getFullYear();
+    const mes = String(segundaFeira.getMonth() + 1).padStart(2, '0');
+    const dia = String(segundaFeira.getDate()).padStart(2, '0');
+    dom.semanaDataInicio.value = `${ano}-${mes}-${dia}`;
+
+    gerarGradeSemana();
+    abrirModal(dom.modalSemanaCompleta);
+  }
+
+  /**
+   * Gera a grade interativa de 7 dias no modal de semana completa
+   */
+  function gerarGradeSemana() {
+    const dataInicioStr = dom.semanaDataInicio.value;
+    if (!dataInicioStr) return;
+
+    let dataBase;
+    try {
+      const p = RHCalculator.parseDateSafe(dataInicioStr);
+      dataBase = p.dateObj;
+    } catch (e) {
+      return;
+    }
+
+    const modelo = dom.semanaModelo.value;
+    dom.semanaDiasContainer.innerHTML = '';
+
+    const nomesDias = [
+      'Segunda-feira',
+      'Terça-feira',
+      'Quarta-feira',
+      'Quinta-feira',
+      'Sexta-feira',
+      'Sábado',
+      'Domingo'
+    ];
+
+    let totalHorasPrevistas = 0;
+
+    for (let i = 0; i < 7; i++) {
+      const diaObj = new Date(dataBase.getFullYear(), dataBase.getMonth(), dataBase.getDate() + i);
+      const diaStr = `${diaObj.getFullYear()}-${String(diaObj.getMonth() + 1).padStart(2, '0')}-${String(diaObj.getDate()).padStart(2, '0')}`;
+      const isDom = diaObj.getDay() === 0;
+      const isSab = diaObj.getDay() === 6;
+
+      let trabalhado = true;
+      let entrada = '08:00';
+      let saida = '16:00';
+
+      if (modelo === '5x2_8h') {
+        if (isSab || isDom) trabalhado = false;
+        else {
+          entrada = '08:00';
+          saida = '16:00';
+        }
+      } else if (modelo === '6x1_dom') {
+        if (isSab) trabalhado = false;
+        else if (isDom) {
+          entrada = '08:00';
+          saida = '15:00';
+        } else {
+          entrada = '08:00';
+          saida = '15:00';
+        }
+      } else if (modelo === '5x2_extras') {
+        if (isSab || isDom) trabalhado = false;
+        else {
+          entrada = '08:00';
+          saida = '18:00'; // 10h
+        }
+      } else if (modelo === '6x1_44h') {
+        if (isDom) trabalhado = false;
+        else if (isSab) {
+          entrada = '08:00';
+          saida = '12:00'; // 4h
+        } else {
+          entrada = '08:00';
+          saida = '16:00'; // 8h
+        }
+      }
+
+      let horasDia = 0;
+      if (trabalhado) {
+        horasDia = RHCalculator.calculateJourneyDuration(entrada, saida);
+        totalHorasPrevistas += horasDia;
+      }
+
+      const row = document.createElement('div');
+      row.className = `p-2.5 flex flex-wrap items-center justify-between gap-2 ${
+        isDom ? 'bg-amber-50/50' : 'bg-white'
+      }`;
+
+      row.innerHTML = `
+        <div class="flex items-center gap-2 min-w-[150px]">
+          <input type="checkbox" id="semanaDiaTrabalhado_${i}" ${trabalhado ? 'checked' : ''} class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 border-slate-300">
+          <div>
+            <div class="font-bold text-slate-800 text-xs">${nomesDias[i]}</div>
+            <div class="text-[11px] text-slate-500 font-mono">${diaStr} ${isDom ? '• <strong class="text-amber-700">Domingo</strong>' : ''}</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div>
+            <label class="text-[10px] text-slate-400 block font-semibold">Entrada</label>
+            <input type="time" id="semanaDiaEntrada_${i}" value="${entrada}" ${!trabalhado ? 'disabled' : ''} class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-mono text-slate-800 disabled:opacity-40">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block font-semibold">Saída</label>
+            <input type="time" id="semanaDiaSaida_${i}" value="${saida}" ${!trabalhado ? 'disabled' : ''} class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-xs font-mono text-slate-800 disabled:opacity-40">
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="flex items-center gap-1.5 cursor-pointer text-[11px] text-slate-600">
+            <input type="checkbox" id="semanaDiaFeriado_${i}" class="rounded text-red-600 focus:ring-red-500 w-3.5 h-3.5 border-slate-300">
+            <span>Feriado</span>
+          </label>
+        </div>
+
+        <div class="w-16 text-right font-mono font-bold text-xs text-slate-800" id="semanaDiaHoras_${i}">
+          ${trabalhado ? RHCalculator.formatHours(horasDia) : '<span class="text-slate-400 font-normal">Folga</span>'}
+        </div>
+      `;
+
+      dom.semanaDiasContainer.appendChild(row);
+
+      // Eventos de alteração dos inputs de cada dia para recalcular
+      const chk = row.querySelector(`#semanaDiaTrabalhado_${i}`);
+      const inEnt = row.querySelector(`#semanaDiaEntrada_${i}`);
+      const inSai = row.querySelector(`#semanaDiaSaida_${i}`);
+
+      const atualizarLinha = () => {
+        inEnt.disabled = !chk.checked;
+        inSai.disabled = !chk.checked;
+        recalcularTotalSemana();
+      };
+
+      chk.addEventListener('change', atualizarLinha);
+      inEnt.addEventListener('input', recalcularTotalSemana);
+      inSai.addEventListener('input', recalcularTotalSemana);
+    }
+
+    dom.semanaResumoHoras.textContent = `Total Previsto: ${RHCalculator.formatHours(totalHorasPrevistas)}`;
+  }
+
+  function recalcularTotalSemana() {
+    let total = 0;
+    for (let i = 0; i < 7; i++) {
+      const chk = document.getElementById(`semanaDiaTrabalhado_${i}`);
+      const inEnt = document.getElementById(`semanaDiaEntrada_${i}`);
+      const inSai = document.getElementById(`semanaDiaSaida_${i}`);
+      const lblHoras = document.getElementById(`semanaDiaHoras_${i}`);
+
+      if (chk && chk.checked && inEnt && inSai) {
+        try {
+          const h = RHCalculator.calculateJourneyDuration(inEnt.value, inSai.value);
+          total += h;
+          if (lblHoras) lblHoras.textContent = RHCalculator.formatHours(h);
+        } catch (e) {
+          if (lblHoras) lblHoras.textContent = 'Erro';
+        }
+      } else if (lblHoras) {
+        lblHoras.innerHTML = '<span class="text-slate-400 font-normal">Folga</span>';
+      }
+    }
+    dom.semanaResumoHoras.textContent = `Total Previsto: ${RHCalculator.formatHours(total)}`;
+  }
+
+  function salvarSemanaCompleta(e) {
+    e.preventDefault();
+
+    const targetScaleId = dom.semanaEscalaSelect.value;
+    const funcionario = dom.semanaFuncionario.value.trim();
+    const dataInicioStr = dom.semanaDataInicio.value;
+
+    if (!targetScaleId) {
+      alert('Selecione uma escala de destino.');
+      return;
+    }
+
+    if (!dataInicioStr) {
+      alert('Informe a data de início da semana.');
+      return;
+    }
+
+    let dataBase;
+    try {
+      const p = RHCalculator.parseDateSafe(dataInicioStr);
+      dataBase = p.dateObj;
+    } catch (err) {
+      alert('Data de início inválida: ' + err.message);
+      return;
+    }
+
+    const novasJornadas = [];
+
+    for (let i = 0; i < 7; i++) {
+      const chk = document.getElementById(`semanaDiaTrabalhado_${i}`);
+      if (chk && chk.checked) {
+        const diaObj = new Date(dataBase.getFullYear(), dataBase.getMonth(), dataBase.getDate() + i);
+        const diaStr = `${diaObj.getFullYear()}-${String(diaObj.getMonth() + 1).padStart(2, '0')}-${String(diaObj.getDate()).padStart(2, '0')}`;
+        const entrada = document.getElementById(`semanaDiaEntrada_${i}`).value;
+        const saida = document.getElementById(`semanaDiaSaida_${i}`).value;
+        const feriado = document.getElementById(`semanaDiaFeriado_${i}`).checked;
+
+        novasJornadas.push({
+          date: diaStr,
+          employee: funcionario,
+          startTime: entrada,
+          endTime: saida,
+          isHoliday: feriado,
+          isHolidayNextDay: false,
+          notes: `Semana gerada para ${funcionario}`
+        });
+      }
+    }
+
+    if (novasJornadas.length === 0) {
+      alert('Nenhum dia de trabalho marcado na semana.');
+      return;
+    }
+
+    try {
+      state.scales = RHStorage.addMultipleJourneysToScale(targetScaleId, novasJornadas);
+      state.activeScaleId = targetScaleId;
+      if (dom.selectEscalaAtiva) dom.selectEscalaAtiva.value = targetScaleId;
+
+      fecharModal(dom.modalSemanaCompleta);
+      renderizarInterface();
+      alert(`Sucesso! ${novasJornadas.length} jornadas da semana foram inseridas para "${funcionario}".`);
+    } catch (err) {
+      alert('Erro ao salvar semana de jornadas: ' + err.message);
     }
   }
 
@@ -783,6 +1131,7 @@
    * Modal de Edição de Jornada
    */
   function abrirModalEditarJornada(journeyId) {
+    atualizarSelectEscalas();
     const escala = getEscalaAtiva();
     if (!escala) return;
 
@@ -790,6 +1139,8 @@
     if (!jornada) return;
 
     dom.modalEditarJornadaId.value = jornada.id;
+    if (dom.modalEditarJornadaEscalaSelect) dom.modalEditarJornadaEscalaSelect.value = escala.id;
+    if (dom.modalEditarJornadaFuncionario) dom.modalEditarJornadaFuncionario.value = jornada.employee || escala.employee || '';
     dom.modalEditarJornadaData.value = jornada.date;
     dom.modalEditarJornadaEntrada.value = jornada.startTime;
     dom.modalEditarJornadaSaida.value = jornada.endTime;
@@ -806,12 +1157,16 @@
   function salvarModalEditarJornada(e) {
     e.preventDefault();
 
-    const escala = getEscalaAtiva();
-    if (!escala) return;
+    const escalaAtual = getEscalaAtiva();
+    if (!escalaAtual) return;
 
     const journeyId = dom.modalEditarJornadaId.value;
+    const destinoEscalaId = dom.modalEditarJornadaEscalaSelect ? dom.modalEditarJornadaEscalaSelect.value : escalaAtual.id;
+    const funcionario = dom.modalEditarJornadaFuncionario ? dom.modalEditarJornadaFuncionario.value.trim() : '';
+
     const updatedJourney = {
       date: dom.modalEditarJornadaData.value,
+      employee: funcionario,
       startTime: dom.modalEditarJornadaEntrada.value,
       endTime: dom.modalEditarJornadaSaida.value,
       isHoliday: dom.modalEditarJornadaFeriado.checked,
@@ -825,9 +1180,17 @@
       return;
     }
 
-    state.scales = RHStorage.updateJourneyInScale(escala.id, journeyId, updatedJourney);
+    if (destinoEscalaId === escalaAtual.id) {
+      state.scales = RHStorage.updateJourneyInScale(escalaAtual.id, journeyId, updatedJourney);
+    } else {
+      // Moveu de escala
+      RHStorage.deleteJourneyFromScale(escalaAtual.id, journeyId);
+      state.scales = RHStorage.addJourneyToScale(destinoEscalaId, updatedJourney);
+      state.activeScaleId = destinoEscalaId;
+    }
+
     fecharModal(dom.modalEditarJornada);
-    renderizarEscalaAtiva();
+    renderizarInterface();
   }
 
   function confirmarExclusaoJornada(journeyId) {
@@ -846,7 +1209,7 @@
   function confirmarRestaurarExemplos() {
     abrirModalConfirmacao(
       'Restaurar Escalas de Exemplo',
-      'Deseja recarregar o conjunto de escalas e jornadas padrão de demonstração? Isso substituirá as alterações não salvas externamente.',
+      'Deseja recarregar o conjunto de escalas e jornadas padrão de demonstração (incluindo as semanas do Funcionário X e Funcionário Y)? Isso substituirá as alterações não salvas externamente.',
       () => {
         state.scales = RHStorage.resetToSampleData();
         state.activeScaleId = state.scales.length > 0 ? state.scales[0].id : null;
@@ -907,11 +1270,11 @@
    * Utilitários de Modais
    */
   function abrirModal(modalElement) {
-    modalElement.classList.remove('hidden');
+    if (modalElement) modalElement.classList.remove('hidden');
   }
 
   function fecharModal(modalElement) {
-    modalElement.classList.add('hidden');
+    if (modalElement) modalElement.classList.add('hidden');
   }
 
   function abrirModalConfirmacao(titulo, mensagem, onConfirm) {

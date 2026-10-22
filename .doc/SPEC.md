@@ -1,265 +1,439 @@
-# SPEC.md — Malemi | Simulador de Escalas e Custos de Folha
+# SPEC.md — Simulador de Escalas e Custos de RH
 
-**Status:** Especificação inicial — levantamento e validação de requisitos  
-**Projeto:** Malemi Data Solutions  
-**Objetivo desta fase:** definir escopo, arquitetura e critérios de validação antes de implementar regras de cálculo da folha.
+## 1. Visão geral do projeto
 
----
+Desenvolver um simulador de escalas de trabalho para Recursos Humanos (RH), com foco na comparação de jornadas e na estimativa dos custos de mão de obra.
 
-## 1. Visão do produto
+O sistema deverá permitir cadastrar jornadas, configurar parâmetros de cálculo, simular diferentes escalas e comparar os resultados para identificar a alternativa de menor custo estimado.
 
-Construir uma aplicação para simular e comparar diferentes escalas de trabalho e estimar seus efeitos na folha de pagamento. A ferramenta deverá importar dados de uma planilha Excel exportada do sistema de folha, permitir configurar cenários de escala e apresentar resultados por funcionário, evento, filial e cenário.
+O projeto deverá ser simples, funcional, responsivo e fácil de manter, com cálculos centralizados e regras claramente documentadas.
 
-O sistema deverá contemplar **todos os eventos existentes na folha de referência**, inclusive aqueles que não mudam quando a escala é alterada. Nenhuma fórmula trabalhista ou regra de negócio poderá ser presumida sem documentação e validação.
+## 2. Objetivo principal
 
-## 2. Objetivos
+Criar uma ferramenta de consulta e simulação que permita:
 
-- Importar e analisar a estrutura de um arquivo Excel de folha.
-- Cadastrar ou mapear funcionários, vínculos, cargos, filiais e eventos necessários à simulação.
-- Definir escalas-base e montar calendários de trabalho.
-- Permitir ajustes manuais no calendário antes da execução.
-- Simular cenários alternativos e compará-los com uma folha de referência.
-- Exibir remuneração bruta e custo total, com detalhamento por evento.
-- Registrar premissas, pendências e decisões aprovadas para que os cálculos sejam auditáveis.
+- Cadastrar diferentes escalas de trabalho.
+- Informar datas, horários de entrada e saída.
+- Configurar o valor da hora trabalhada.
+- Definir o limite de horas normais por jornada.
+- Identificar domingos e informar feriados manualmente.
+- Calcular horas normais e horas extras.
+- Estimar os custos de cada jornada.
+- Comparar os custos totais das escalas.
+- Identificar a escala de menor custo estimado.
+- Consultar o detalhamento dos cálculos por jornada e por evento.
 
-## 3. Princípios obrigatórios
+O resultado deverá ajudar na análise de alternativas de escala, sem substituir um sistema oficial de folha de pagamento.
 
-1. **Não inventar regras:** não implementar uma fórmula de folha enquanto sua regra, fonte e tratamento de exceções não forem documentados e aprovados.
-2. **Preservar a referência:** manter os dados importados originais separados dos resultados calculados.
-3. **Rastreabilidade:** cada resultado deve permitir identificar o evento, a regra aplicada, os parâmetros e os dados de entrada utilizados.
-4. **Comparação justa:** eventos que não mudam com a escala devem continuar incluídos no cenário, quando fizerem parte da folha de referência.
-5. **Validação antes da expansão:** comparar os resultados com casos reais conhecidos e obter aprovação antes de ampliar a cobertura.
-6. **Proteção de dados:** tratar informações de funcionários como confidenciais; usar dados fictícios ou anonimizados em desenvolvimento e testes.
-7. **Mudanças incrementais:** não reescrever módulos funcionais sem necessidade; apresentar o impacto e testar regressões.
+## 3. Tecnologias e restrições
 
-## 4. Escopo funcional
+Utilizar exclusivamente:
 
-### 4.1 Importação e análise da planilha
+- HTML5;
+- CSS3;
+- Tailwind CSS;
+- JavaScript puro (Vanilla JavaScript);
+- localStorage para persistência local, se necessário.
 
-- Aceitar um arquivo Excel exportado do sistema de folha.
-- Inspecionar abas, cabeçalhos, tipos de dados, identificadores e eventos.
-- Produzir um relatório de qualidade dos dados: campos ausentes, duplicidades, formatos inesperados, valores inválidos e linhas que exigem revisão.
-- Permitir mapear as colunas da origem para os campos internos.
-- Não descartar colunas ou eventos desconhecidos silenciosamente.
-- Guardar uma cópia lógica dos dados de entrada e identificar a importação utilizada em cada simulação.
-- Se a planilha não tiver dados suficientes para calcular determinado evento, marcar a informação como pendente em vez de estimá-la.
+### Restrições obrigatórias
 
-### 4.2 Funcionários e parâmetros
+- Não utilizar Node.js.
+- Não implementar backend.
+- Não criar servidor HTTP ou API REST.
+- Não utilizar banco de dados.
+- Não utilizar frameworks JavaScript como React, Vue ou Angular.
+- Não exigir instalação de dependências.
+- Não exigir compilação ou processo de build.
 
-O sistema poderá organizar os funcionários por filial, cargo, tipo de remuneração e regime de jornada, conforme os campos realmente disponíveis na fonte.
+A aplicação deverá funcionar como um site estático, permitindo abrir o arquivo index.html em um navegador moderno.
 
-Parâmetros mencionados inicialmente e que **precisam de confirmação**:
+Neste projeto, o termo API refere-se à lógica de consulta e simulação implementada em funções JavaScript locais. Não deverá existir uma API HTTP externa.
 
-- Administrativos/mensalistas: referência de 200 horas mensais.
-- Fábrica/horistas: referência de 220 horas mensais.
-- Cargos específicos: possível referência de 180 horas mensais.
-- Há três filiais com escalas que podem variar.
+Caso o Tailwind CSS seja utilizado por CDN, documentar que o carregamento do framework depende de conexão com a internet.
 
-Esses valores são hipóteses fornecidas para levantamento, não regras universais nem valores a codificar definitivamente sem validação. A jornada aplicável deve ser configurável por grupo ou funcionário, de acordo com a regra aprovada.
+## 4. Público e utilização
 
-### 4.3 Cadastro de escalas e calendário
+A aplicação destina-se à simulação de escalas e custos de mão de obra, permitindo que o usuário compare cenários antes de tomar decisões.
 
-- Permitir definir escalas-base por dia da semana e/ou por ciclo.
-- Permitir associar escalas às filiais, grupos ou funcionários, conforme os requisitos confirmados.
-- Gerar um calendário mensal a partir da escala-base.
-- Permitir editar manualmente qualquer dia antes da simulação.
-- Registrar, quando aplicável, início e fim do turno, intervalos, folgas e turnos que atravessam a meia-noite.
-- Distinguir calendário planejado de ajustes manuais.
-- Validar conflitos, sobreposições, horários inválidos e duração incoerente.
-- Permitir visualizar claramente a escala antes de executar os cálculos.
+A interface deverá ser compreensível para pessoas que trabalham com RH, departamento pessoal, planejamento de jornadas e análise de custos.
 
-### 4.4 Motor de simulação da folha
+## 5. Cadastro de escalas e jornadas
 
-O motor deve ser separado da interface e organizado por regras e eventos identificáveis.
+Permitir criar, editar, consultar e excluir escalas.
 
-- Processar todos os eventos presentes na folha de referência.
-- Classificar cada evento como, por exemplo: fixo/não afetado pela escala, variável conforme a jornada, derivado de horas, percentual, informativo ou ainda não classificado. A classificação final deve ser validada.
-- Recalcular somente eventos cuja regra aprovada dependa da escala.
-- Preservar no cenário os valores dos eventos que não dependem da escala, respeitando eventuais regras específicas aprovadas.
-- Não tratar um evento desconhecido como zero.
-- Exibir pendências quando faltarem dados, fórmulas, parâmetros ou decisões.
-- Armazenar a memória de cálculo para explicar como cada valor foi obtido.
-- Evitar arredondamentos intermediários não previstos na regra aprovada.
+Cada escala deverá possuir:
 
-### 4.5 Horas, adicionais e datas especiais
+- Nome ou identificação da escala.
+- Funcionário ou identificação do cenário, quando aplicável.
+- Valor da hora trabalhada.
+- Limite de horas normais por jornada.
+- Uma ou mais jornadas cadastradas.
 
-Foram mencionadas como hipóteses iniciais para validação:
+Cada jornada deverá permitir informar:
 
-- Adicional de 50% para determinadas horas extras.
-- Tratamento de 100% para domingos e feriados conforme critérios definidos pelo negócio.
-- Tratamento de datas especiais, incluindo dias de eleição.
-- Possíveis turnos noturnos e turnos que atravessam a meia-noite.
+- Data de trabalho.
+- Horário de entrada.
+- Horário de saída.
+- Identificação manual de feriado.
+- Observações opcionais.
 
-Esses itens **não são autorização para presumir regras legais ou convencionais**. Antes de implementar, registrar para cada caso: regra, fonte aplicável (por exemplo, convenção coletiva ou política formal), vigência, abrangência, exceções, método de cálculo, responsável pela validação e casos de teste. Domingo, feriado, dia de eleição e hora extra não devem ser automaticamente tratados como equivalentes.
+A interface deverá permitir adicionar várias jornadas à mesma escala e comparar diferentes escalas entre si.
 
-### 4.6 Comparação de cenários
+Não exigir dados pessoais desnecessários para realizar uma simulação.
 
-- Comparar uma escala de referência com uma ou mais escalas alternativas.
-- Exibir remuneração bruta e custo total conforme a definição aprovada para cada métrica.
-- Mostrar valores por evento e diferenças absolutas e percentuais.
-- Permitir análise por funcionário, filial e total do cenário.
-- Destacar eventos alterados, inalterados, ausentes ou pendentes.
-- Informar claramente a base de comparação, o período, os parâmetros e as regras utilizadas.
-- Não chamar um valor de “custo total” até que os componentes incluídos (encargos, provisões, benefícios e outros itens) sejam definidos e aprovados.
+## 6. Calendário e tratamento de datas
 
-### 4.7 Relatórios e exportação
+- Permitir selecionar a data de cada jornada.
+- Identificar automaticamente os domingos.
+- Permitir marcar manualmente os feriados.
+- Não exigir uma integração externa para identificar feriados.
+- Validar datas e horários informados.
+- Tratar jornadas que atravessam a meia-noite.
+- Dividir jornadas entre dias quando necessário para identificar corretamente domingos e feriados.
 
-A definir após validação dos dados e das métricas:
+Quando uma jornada atravessar dias com classificações diferentes, calcular os períodos separadamente, evitando aplicar automaticamente a mesma classificação à jornada inteira.
 
-- Resumo comparativo por cenário.
-- Detalhamento por funcionário e evento.
-- Relatório de qualidade da importação.
-- Relatório de premissas, regras e pendências.
-- Exportação para Excel ou CSV, caso seja confirmada como necessária.
+A regra de tratamento de feriados que coincidam com domingos deverá ser documentada e configurável quando necessário, sem presumir regras legais ou coletivas não especificadas.
 
-## 5. Fora do escopo inicial
+## 7. Parâmetros de cálculo
 
-Ficam fora da primeira versão, salvo aprovação posterior:
+O usuário deverá poder configurar:
 
-- Integração automática com sistemas de folha.
-- Cálculo oficial ou processamento efetivo de pagamento.
-- Alteração de dados no sistema de folha de origem.
-- Gestão completa de férias, afastamentos, faltas e outras ocorrências. Esses itens foram inicialmente deixados fora do escopo e devem continuar explicitamente sinalizados quando afetarem a validade de um cenário.
-- Aplicação automática de interpretação jurídica.
-- Banco de dados ou serviço de backend escolhidos sem uma decisão de arquitetura.
+- Valor da hora trabalhada.
+- Limite de horas normais por jornada.
+- Percentual de adicional para horas extras comuns.
+- Percentual de remuneração estimada para domingos e feriados.
 
-A ferramenta será inicialmente de simulação e apoio à decisão, não substituindo a conferência da folha oficial nem a validação pelo profissional responsável.
+Como configuração inicial da simulação:
 
-## 6. Arquitetura e tecnologias
+- Horas normais: 100% do valor da hora.
+- Horas extras comuns: 150% do valor da hora, correspondendo à hora normal acrescida de 50%.
+- Domingos e feriados: 200% do valor da hora, correspondendo à hora normal acrescida de 100%.
 
-A arquitetura tecnológica ainda deve ser confirmada com base no ambiente real e nas limitações do projeto.
+O limite de horas normais deverá ser editável. Poderá ser sugerido inicialmente um limite de 8 horas por jornada, mas esse valor será apenas um parâmetro de simulação, não uma regra universal de jornada de trabalho.
 
-Diretrizes:
+Não presumir que o limite diário de 8 horas representa todas as regras aplicáveis ao trabalhador.
 
-- Separar interface, importação/normalização dos dados, calendário, regras de cálculo, comparação e exportação.
-- Centralizar regras em módulos identificáveis, com parâmetros configuráveis quando apropriado.
-- Evitar duplicar fórmulas em componentes de interface.
-- Não adicionar banco de dados, backend ou serviços externos sem justificar a necessidade.
-- Se for escolhida uma aplicação somente no navegador, avaliar com antecedência as limitações de armazenamento, tamanho de arquivo, persistência e proteção dos dados.
-- Não publicar planilhas reais, dados pessoais ou informações salariais em repositórios públicos ou hospedagem pública.
-- Se houver necessidade de compartilhar uma demonstração por link, usar apenas dados fictícios/anonimizados e deixar claro que se trata de uma demonstração.
+## 8. Regras de cálculo
 
-## 7. Skills do Antigravity
+### 8.1 Horas trabalhadas
 
-Utilizar as skills disponíveis na pasta do projeto, se seus arquivos e instruções confirmarem que são compatíveis com a tarefa.
+Calcular a duração efetiva da jornada com base nos horários de entrada e saída.
 
-### Skills principais
+Validar horários inválidos e tratar jornadas que atravessam a meia-noite.
 
-1. `plan-writing` — planejar etapas, dependências, riscos e critérios de conclusão.
-2. `documentation-templates` — documentar requisitos, regras, decisões e pendências.
-3. `architecture` — definir separação de responsabilidades e interfaces entre módulos.
-4. `testing-patterns` — estruturar testes unitários, de integração e de regressão.
-5. `systematic-debugging` — investigar divergências sem alterar código aleatoriamente.
+Não considerar automaticamente intervalos de descanso ou refeição como horas descontadas, pois essa regra ainda não foi definida. Se necessário, prever um campo de intervalo para futura implementação, sem aplicar descontos não autorizados.
 
-### Skills de implementação e qualidade
+### 8.2 Horas normais
 
-6. `app-builder` — organizar a construção da aplicação, se compatível com a arquitetura aprovada.
-7. `clean-code` — manter o código legível e modular.
-8. `code-review-checklist` — revisar mudanças e riscos antes de aceitá-las.
-9. `lint-and-validate` — executar verificações estáticas e validações disponíveis.
-10. `frontend-design` — criar uma interface clara para calendário e comparação.
-11. `tailwind-patterns` — utilizar somente se Tailwind CSS for escolhido.
-12. `webapp-testing` — testar os fluxos completos pela interface, se aplicável.
-13. `vulnerability-scanner` — verificar riscos de segurança antes de compartilhar ou publicar.
+Para dias comuns, calcular as horas normais até o limite configurado para a jornada.
 
-Não presumir que uma skill foi executada apenas por estar listada. O agente deve verificar as instruções de cada skill na pasta local e informar quais utilizou. Não instalar dependências ou mudar a stack sem aprovação.
+Fórmula:
 
-## 8. Fases de trabalho
+Horas normais = menor valor entre horas trabalhadas e limite de horas normais.
 
-### Fase 1 — Levantamento e validação (fase atual)
+Custo de horas normais = horas normais × valor da hora.
 
-1. Solicitar uma cópia da planilha de folha, preferencialmente anonimizada.
-2. Inventariar abas, colunas, identificadores e eventos.
-3. Elaborar dicionário de dados.
-4. Criar catálogo completo de eventos encontrados.
-5. Classificar cada evento como dependente, independente ou ainda não determinado em relação à escala.
-6. Documentar as regras e suas fontes.
-7. Registrar perguntas em aberto e responsáveis pelas respostas.
-8. Preparar casos reais de referência para validação.
+### 8.3 Horas extras de 50%
 
-**Critério de saída:** catálogo dos eventos e regras revisado, dúvidas explicitadas e responsáveis autorizando as regras necessárias para a primeira versão.
+Para dias comuns, calcular as horas que excederem o limite configurado.
 
-### Fase 2 — Protótipo de calendário
+Fórmula:
 
-- Construir o cadastro de escalas e calendário mensal com dados fictícios.
-- Validar ciclos, turnos, intervalos, folgas e edições manuais.
-- Não calcular valores de folha ainda.
+Horas extras = máximo entre zero e (horas trabalhadas − limite de horas normais).
 
-**Critério de saída:** calendário validado com casos de teste aprovados.
+Custo de horas extras = horas extras × valor da hora × 1,5.
 
-### Fase 3 — Motor de cálculo controlado
+### 8.4 Domingos e feriados com adicional de 100%
 
-- Implementar apenas eventos com regras aprovadas.
-- Criar testes unitários para cada regra.
-- Comparar resultados com casos de referência.
-- Mostrar pendências para eventos sem regra validada.
+Para períodos classificados como domingo ou feriado, utilizar como estimativa inicial o pagamento de 200% do valor da hora.
 
-**Critério de saída:** resultados reproduzíveis e aprovados nos casos de teste definidos.
+Fórmula:
 
-### Fase 4 — Comparação e relatórios
+Custo de domingo ou feriado = horas elegíveis × valor da hora × 2.
 
-- Comparar cenários.
-- Apresentar valores e diferenças por evento, funcionário e filial.
-- Validar as definições de remuneração bruta e custo total.
-- Validar exportações, se incluídas.
+Nesta simulação inicial, não acumular automaticamente o adicional de 50% com o adicional de 100%.
 
-### Fase 5 — Segurança e entrega
+A aplicação dessa regra é uma hipótese de cálculo do simulador, não uma afirmação de que todas as categorias profissionais ou situações trabalhistas devem ser remuneradas dessa forma.
 
-- Revisar permissões, exposição de dados, armazenamento e dependências.
-- Executar testes de regressão e revisão de código.
-- Documentar limitações conhecidas.
-- Publicar somente após aprovação e com dados fictícios/anonimizados se a hospedagem for pública.
+As regras efetivas podem depender da legislação aplicável, de convenções ou acordos coletivos, do regime de trabalho e de outras condições.
 
-## 9. Critérios de aceite gerais
+### 8.5 Exemplo de cálculo
 
-- Nenhum evento da planilha de referência é descartado silenciosamente.
-- Todo evento tem classificação, regra e status de validação, ou aparece como pendente.
-- Os eventos não afetados pela escala continuam representados corretamente.
-- Cada cálculo pode ser rastreado até os dados e parâmetros utilizados.
-- Casos de teste aprovados reproduzem os resultados esperados dentro da regra de arredondamento documentada.
-- Diferenças entre referência e simulação são explicáveis por evento.
-- Cenários com dados insuficientes são sinalizados, não apresentados como resultados completos.
-- Nenhuma regra trabalhista ou convencional é inventada pelo agente.
-- Dados pessoais e salariais não são enviados a serviços externos nem publicados sem autorização explícita.
-- A aplicação não altera a folha original.
+Considere os seguintes parâmetros:
 
-## 10. Riscos e controles
+- Valor da hora: R$ 20,00.
+- Limite de horas normais: 8 horas.
+- Jornada em dia comum: 10 horas.
 
-| Risco | Controle exigido |
-|---|---|
-| Fórmula incorreta ou regra incompleta | Aprovação de regra e teste de referência antes de implementar |
-| Evento omitido | Inventário completo e alerta para eventos desconhecidos |
-| Dupla contagem de adicionais | Regras explícitas de acumulação e precedência |
-| Erros em turnos noturnos ou entre dias | Testes de limites de data e hora |
-| Comparação de custos incompleta | Definição formal dos componentes de custo |
-| Dados pessoais expostos | Anonimização, acesso restrito e hospedagem apropriada |
-| Mudança quebrar função existente | Alterações pequenas e testes de regressão |
+Resultado esperado:
 
-## 11. Pendências que exigem decisão
+- Horas normais: 8.
+- Custo normal: R$ 160,00.
+- Horas extras: 2.
+- Custo das horas extras: R$ 60,00.
+- Custo total estimado: R$ 220,00.
 
-1. Qual é a estrutura exata do Excel e quais abas contêm os eventos?
-2. Qual período será simulado e qual é a folha de referência?
-3. Como identificar de forma única funcionário, filial, cargo e vínculo?
-4. Quais são os tipos de remuneração e as jornadas efetivamente aplicáveis?
-5. Quais convenções coletivas, acordos e políticas se aplicam a cada grupo?
-6. Como são calculados e acumulados os adicionais e demais eventos?
-7. Quais componentes entram na definição de custo total?
-8. Como tratar eventos variáveis, médias, arredondamentos e exceções?
-9. A aplicação precisa salvar cenários entre sessões ou será temporária?
-10. Onde será executada e quem poderá acessar os dados?
-11. Quais relatórios e formatos de exportação são necessários?
+Para uma jornada de 8 horas classificada como domingo ou feriado:
 
-## 12. Instrução inicial para o Antigravity
+- Horas consideradas: 8.
+- Custo estimado: R$ 320,00.
 
-**Nesta primeira execução, não implemente o motor de cálculo da folha.**
+Os exemplos deverão ser utilizados nos testes automatizados ou manuais da lógica de cálculo.
 
-1. Leia este `SPEC.md` integralmente.
-2. Inspecione a estrutura atual do projeto e as skills disponíveis na pasta local.
-3. Verifique quais skills são pertinentes e leia suas instruções.
-4. Faça um diagnóstico do estado atual do projeto sem sobrescrever arquivos.
-5. Apresente uma proposta de arquitetura e um plano incremental.
-6. Crie, se necessário e após verificar os arquivos existentes, documentos auxiliares para o dicionário de dados, catálogo de eventos, registro de regras e casos de teste.
-7. Liste as informações que faltam e os arquivos de entrada necessários.
-8. Aguarde validação das regras e do plano antes de implementar fórmulas de folha.
+## 9. Comparação de escalas
 
-Não invente dados, resultados, legislação aplicável ou regras de cálculo. Diferencie claramente fatos observados, hipóteses e decisões pendentes.
+Permitir comparar duas ou mais escalas.
+
+A comparação deverá apresentar:
+
+- Nome da escala.
+- Quantidade total de horas.
+- Horas normais.
+- Horas extras de 50%.
+- Horas em domingos e feriados.
+- Custo de horas normais.
+- Custo de horas extras.
+- Custo de domingos e feriados.
+- Custo total estimado.
+- Diferença de custo entre as escalas.
+- Classificação da escala de menor custo estimado.
+
+Ordenar os resultados do menor para o maior custo total.
+
+Destacar a alternativa de menor custo, sem afirmar que ela é necessariamente a melhor opção operacional ou juridicamente válida.
+
+Quando as escalas utilizarem valores por hora diferentes, apresentar um aviso para que a comparação seja interpretada corretamente.
+
+## 10. Detalhamento dos resultados
+
+Disponibilizar uma visualização detalhada por escala e jornada.
+
+O detalhamento deverá permitir identificar:
+
+- Data da jornada.
+- Horários informados.
+- Total de horas calculadas.
+- Classificação do dia.
+- Horas normais.
+- Horas extras.
+- Multiplicador aplicado.
+- Valor da hora.
+- Custo estimado de cada evento.
+- Total da jornada.
+
+Os cálculos deverão ser transparentes, permitindo ao usuário conferir como cada total foi obtido.
+
+## 11. Arquitetura JavaScript
+
+Organizar o código em funções pequenas e reutilizáveis.
+
+Separar, sempre que possível:
+
+- Validação de dados.
+- Cálculo da duração das jornadas.
+- Classificação dos períodos por data.
+- Cálculo de horas normais.
+- Cálculo de horas extras.
+- Cálculo de domingos e feriados.
+- Cálculo dos custos.
+- Comparação de escalas.
+- Persistência local.
+- Renderização da interface.
+
+Manter as regras de negócio centralizadas, evitando fórmulas duplicadas em diferentes componentes da interface.
+
+Não utilizar valores monetários formatados como texto nos cálculos internos. Manter valores numéricos e aplicar formatação monetária somente na apresentação.
+
+## 12. Persistência dos dados
+
+Utilizar localStorage somente se necessário para manter os dados entre acessos no mesmo navegador.
+
+Informar claramente que:
+
+- Os dados ficam armazenados localmente no navegador.
+- Os dados não são sincronizados automaticamente entre dispositivos.
+- Limpar os dados do navegador pode remover as informações salvas.
+- Não existe banco de dados centralizado.
+- Não existe compartilhamento automático entre usuários.
+
+Disponibilizar uma opção para limpar os dados salvos, solicitando confirmação antes da exclusão.
+
+Não armazenar senhas, credenciais ou dados pessoais desnecessários.
+
+## 13. Interface e experiência do usuário
+
+Criar uma interface:
+
+- Responsiva para computadores, tablets e celulares.
+- Organizada e intuitiva.
+- Com formulários claros.
+- Com tabelas de comparação legíveis.
+- Com resultados monetários bem formatados.
+- Com mensagens de validação e erros compreensíveis.
+- Com estados vazios informativos.
+- Com confirmação antes de ações destrutivas.
+- Com navegação acessível por teclado.
+- Com contraste adequado e rótulos nos campos.
+
+Priorizar a clareza dos cálculos e a facilidade de comparação, sem adicionar funcionalidades que não estejam descritas nesta especificação.
+
+## 14. Tratamento de erros e validações
+
+Validar:
+
+- Campos obrigatórios.
+- Datas inválidas.
+- Horários inválidos.
+- Valor da hora negativo ou inválido.
+- Limite de horas inválido.
+- Jornadas sem duração válida.
+- Escalas sem jornadas.
+- Valores numéricos ausentes ou não numéricos.
+- Falhas de leitura ou gravação no localStorage.
+
+Não permitir que dados inválidos produzam resultados silenciosamente incorretos.
+
+Quando não for possível realizar um cálculo, explicar o motivo ao usuário.
+
+## 15. Limitações de negócio
+
+A primeira versão será um simulador simplificado.
+
+Não implementar automaticamente:
+
+- Encargos trabalhistas e previdenciários.
+- FGTS, INSS ou outros tributos.
+- Descanso semanal remunerado (DSR).
+- Adicional noturno.
+- Banco de horas.
+- Férias, décimo terceiro ou rescisões.
+- Divisor mensal de salário.
+- Regras específicas de convenções coletivas.
+- Compensações de jornada.
+- Intervalos legais automáticos.
+- Regras específicas de categorias profissionais.
+- Acúmulo de adicionais não definido nesta especificação.
+
+Esses itens somente poderão ser incorporados após levantamento de requisitos e validação das regras correspondentes.
+
+Apresentar um aviso visível informando que os resultados são estimativas para comparação e não substituem o cálculo oficial da folha de pagamento nem a validação das regras aplicáveis.
+
+## 16. Estrutura de arquivos sugerida
+
+Organizar o projeto de forma simples:
+
+- index.html
+- css/styles.css
+- js/app.js
+- docs/regras-calculo.md
+- docs/testes.md
+- README.md
+- SPEC.md
+- .gitignore
+
+A estrutura poderá ser adaptada após a análise do projeto existente, desde que a solução permaneça estática e respeite as tecnologias obrigatórias.
+
+Preservar a pasta .agents e as skills existentes.
+
+Não excluir arquivos existentes sem verificar sua finalidade.
+
+## 17. Documentação obrigatória
+
+Criar ou atualizar o README.md em português do Brasil.
+
+O documento deverá conter:
+
+- Objetivo do projeto.
+- Funcionalidades.
+- Tecnologias utilizadas.
+- Estrutura dos arquivos.
+- Como executar o projeto.
+- Como cadastrar e comparar escalas.
+- Explicação das regras de cálculo.
+- Exemplos numéricos.
+- Limitações conhecidas.
+- Funcionamento do localStorage.
+- Procedimentos de testes.
+- Aviso sobre a natureza estimativa dos resultados.
+- Créditos do desenvolvedor.
+
+A execução deverá ser explicada de forma simples: abrir o arquivo index.html em um navegador moderno.
+
+Criar também docs/regras-calculo.md com as fórmulas e premissas utilizadas e docs/testes.md com os cenários de validação.
+
+## 18. Testes obrigatórios
+
+Validar, no mínimo:
+
+1. Jornada comum inferior ao limite normal.
+2. Jornada comum exatamente no limite normal.
+3. Jornada comum acima do limite normal.
+4. Jornada em domingo.
+5. Jornada em feriado marcado manualmente.
+6. Jornada que atravessa a meia-noite.
+7. Jornada que atravessa de um dia comum para um domingo.
+8. Jornada que atravessa de um dia comum para um feriado.
+9. Comparação entre escalas com o mesmo valor por hora.
+10. Comparação entre escalas com valores por hora diferentes.
+11. Campos inválidos ou incompletos.
+12. Persistência e exclusão de dados locais.
+13. Funcionamento da interface em telas menores.
+
+Conferir os resultados matematicamente e corrigir qualquer divergência antes de concluir.
+
+Não declarar que todos os testes passaram se não tiverem sido efetivamente executados.
+
+## 19. Git e segurança do repositório
+
+Antes de preparar alterações para versionamento:
+
+- Revisar o .gitignore.
+- Verificar os arquivos que seriam incluídos.
+- Não incluir credenciais, tokens, senhas ou informações privadas.
+- Não publicar o conteúdo de .doc/meu_git caso contenha informações confidenciais.
+- Não excluir arquivos de configuração sem verificar sua finalidade.
+- Não executar git commit ou git push sem autorização explícita.
+
+Ao finalizar, informar quais arquivos foram criados ou alterados e apresentar os comandos Git sugeridos, se necessário, sem executá-los automaticamente.
+
+## 20. Identificação do desenvolvedor
+
+O rodapé da interface deverá conter exatamente:
+
+Desenvolvedor: Diego Miranda Cezar
+
+Não modificar a grafia desse texto.
+
+## 21. Critérios de aceite
+
+O projeto será considerado pronto para validação quando:
+
+- Abrir no navegador sem exigir Node.js ou backend.
+- Permitir cadastrar e editar escalas e jornadas.
+- Validar corretamente as entradas.
+- Calcular horas normais e extras de acordo com os parâmetros.
+- Tratar domingos, feriados e mudanças de data conforme as premissas documentadas.
+- Comparar os custos das escalas.
+- Apresentar o detalhamento dos resultados.
+- Identificar a escala de menor custo estimado.
+- Persistir dados localmente quando essa funcionalidade estiver habilitada.
+- Apresentar mensagens de erro compreensíveis.
+- Possuir README e documentação das regras.
+- Passar pelos testes efetivamente executados.
+- Exibir o crédito exato do desenvolvedor no rodapé.
+
+## 22. Entrega final
+
+Ao concluir o trabalho, apresentar:
+
+1. Resumo do diagnóstico inicial.
+2. Descrição da implementação realizada.
+3. Lista dos arquivos criados ou alterados.
+4. Regras de cálculo implementadas.
+5. Testes executados e seus resultados reais.
+6. Limitações ou dúvidas que ainda dependam de validação.
+7. Instruções para executar a aplicação.
+8. Situação do Git, sem realizar commit ou push automaticamente.
+
+Priorize a correção dos cálculos, a transparência das premissas, a simplicidade técnica e a facilidade de manutenção.

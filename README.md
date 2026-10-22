@@ -82,8 +82,8 @@ A execução é extremamente simples e não requer nenhuma instalação:
 
 ### 5.1. Criando ou Editando uma Escala
 1. No cabeçalho, clique no botão **"Nova Escala"** (ou em **"Configurar Parâmetros"** para alterar a escala ativa).
-2. Informe o **Nome da Escala** (ex.: *Escala 5x2 Comercial*, *Escala 12x36 Portaria*).
-3. Opcionalmente, informe o **Cenário / Colaborador**.
+2. Informe o **Nome da Escala** (ex.: *Escala Semanal — Funcionário X*, *Escala Semanal — Funcionário Y*).
+3. Opcionalmente, informe o **Cenário / Colaborador** (ex.: *Funcionário X*, *Funcionário Y*).
 4. Configure os parâmetros da simulação:
    - **Valor da Hora Normal (R$)** (ex.: R$ 20,00).
    - **Limite Diário de Horas Normais** (ex.: 8,0 horas).
@@ -91,21 +91,33 @@ A execução é extremamente simples e não requer nenhuma instalação:
    - **Remuneração para Domingos e Feriados** (padrão: 100% de adicional = 200%).
 5. Clique em **Salvar Escala**.
 
-### 5.2. Adicionando Jornadas
-1. Na aba **"Gestão e Detalhamento da Escala"**, utilize o formulário de cadastro rápido.
-2. Selecione a **Data da Jornada**. Se a data for domingo, o sistema identificará automaticamente.
-3. Preencha o **Horário de Entrada** (ex.: `08:00`) e o **Horário de Saída** (ex.: `16:00` ou `04:00` do dia seguinte).
-4. Caso a jornada ocorra em feriado, marque a opção **"Marcar como Feriado"**.
-5. Se o horário de saída for menor ou igual ao de entrada (virada da meia-noite), surgirá a opção de indicar se o dia seguinte também é feriado.
-6. Clique em **"Adicionar"**. A jornada será processada e exibida na tabela com o detalhamento imediato dos custos.
+### 5.2. Adicionando Jornadas (Individual ou Semana Completa)
+Você pode adicionar jornadas de duas formas:
 
-### 5.3. Comparando Escalas
-1. Clique na aba **"Comparação Geral de Escalas"**.
-2. A tela apresentará:
-   - A **Tabela Ranqueada** com todas as escalas cadastradas, ordenadas da mais barata para a mais cara.
-   - O selo **"1º (Menor Custo)"** na alternativa mais econômica.
-   - O cálculo da **Diferença (R$ e %)** em relação à melhor alternativa.
-   - Um alerta visual caso haja escalas com valores-hora distintos.
+#### Opção A: Inclusão Dia a Dia com Seleção de Escala e Funcionário
+1. No formulário de cadastro rápido:
+   - **Escala de Destino:** Escolha a qual escala aquela jornada pertence.
+   - **Funcionário (Fictício):** Digite ou selecione uma sugestão (ex.: *Funcionário X*, *Funcionário Y*).
+   - **Data da Jornada:** Selecione a data (domingos são identificados automaticamente).
+   - **Entrada e Saída:** Digite os horários (ex.: `08:00` às `16:00` ou `22:00` às `06:00` para plantão noturno).
+   - **Feriado:** Marque se for feriado (ou se o dia seguinte após 00:00 for feriado).
+2. Clique em **"Adicionar Jornada"**.
+
+#### Opção B: Assistente de Semana Completa (7 dias em 1 clique)
+1. Clique no botão **"📅 Incluir Semana Completa (7 dias)"**.
+2. Selecione a **Escala de Destino** e informe o **Funcionário Fictício** (ex.: *Funcionário X* ou *Funcionário Y*).
+3. Informe a **Segunda-feira de Início da Semana**.
+4. Escolha o modelo de jornada semanal (ex.: *5x2 Comercial*, *6x1 com Domingo*, *5x2 com Horas Extras* ou personalize cada um dos 7 dias).
+5. Clique em **"Gerar e Salvar 7 Jornadas"**. O sistema cadastra a semana inteira de uma só vez!
+
+### 5.3. Comparando a Semana do Funcionário X vs Funcionário Y
+1. Cadastre a semana de jornadas do **Funcionário X** (ex.: 5x2 Comercial, 40h @ R$ 20/h = R$ 800,00).
+2. Cadastre a semana de jornadas do **Funcionário Y** (ex.: 6x1 com Domingo, 42h @ R$ 20/h = R$ 980,00).
+3. Clique na aba **"Comparação Geral de Escalas"**.
+4. A tela apresentará:
+   - A **Tabela Ranqueada** com todas as escalas, indicando claramente o colaborador (`👤 Funcionário X` vs `👤 Funcionário Y`).
+   - O selo **"1º (Menor Custo)"** na alternativa mais econômica (Funcionário X como referência de menor custo).
+   - O cálculo da **Diferença (+R$ 180,00 / +22,5%)** do Funcionário Y em relação ao Funcionário X.
    - **Cards Resumo** de cada escala com os totais de horas normais, extras e domingos/feriados.
 
 ---

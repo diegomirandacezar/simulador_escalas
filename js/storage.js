@@ -1,7 +1,7 @@
 /**
  * Módulo de Armazenamento Local — Simulador de Escalas e Custos de RH
  * Gerenciamento seguro no localStorage do navegador, com suporte a dados de demonstração,
- * importação/exportação e limpeza segura.
+ * importação/exportação e inclusão em lote de semanas de jornadas.
  *
  * Desenvolvedor: Diego Miranda Cezar
  */
@@ -19,71 +19,79 @@
 
   /**
    * Conjunto de dados de demonstração inicial para teste imediato e demonstração.
+   * Contempla uma semana completa do Funcionário X e uma semana completa do Funcionário Y
+   * para comparação instantânea.
    */
   function getDefaultScales() {
     return [
       {
-        id: 'escala-5x2-comercial',
-        name: 'Escala 5x2 — Administrativa (Seg a Sex)',
-        employee: 'Cenário Padrão 1',
+        id: 'escala-func-x',
+        name: 'Escala Semanal — Funcionário X (5x2 Comercial)',
+        employee: 'Funcionário X',
         hourlyRate: 20.0,
         dailyNormalLimit: 8.0,
         overtimeMultiplier: 1.5,
         sundayHolidayMultiplier: 2.0,
         journeys: [
           {
-            id: 'j-5x2-1',
+            id: 'j-x-1',
+            employee: 'Funcionário X',
             date: '2026-10-19', // Segunda
             startTime: '08:00',
             endTime: '16:00',
             isHoliday: false,
-            notes: 'Jornada comercial padrão (8h)'
+            notes: 'Segunda-feira comercial (8h normais)'
           },
           {
-            id: 'j-5x2-2',
+            id: 'j-x-2',
+            employee: 'Funcionário X',
             date: '2026-10-20', // Terça
             startTime: '08:00',
             endTime: '16:00',
             isHoliday: false,
-            notes: 'Jornada comercial padrão (8h)'
+            notes: 'Terça-feira comercial (8h normais)'
           },
           {
-            id: 'j-5x2-3',
+            id: 'j-x-3',
+            employee: 'Funcionário X',
             date: '2026-10-21', // Quarta
             startTime: '08:00',
             endTime: '16:00',
             isHoliday: false,
-            notes: 'Jornada comercial padrão (8h)'
+            notes: 'Quarta-feira comercial (8h normais)'
           },
           {
-            id: 'j-5x2-4',
+            id: 'j-x-4',
+            employee: 'Funcionário X',
             date: '2026-10-22', // Quinta
             startTime: '08:00',
             endTime: '16:00',
             isHoliday: false,
-            notes: 'Jornada comercial padrão (8h)'
+            notes: 'Quinta-feira comercial (8h normais)'
           },
           {
-            id: 'j-5x2-5',
+            id: 'j-x-5',
+            employee: 'Funcionário X',
             date: '2026-10-23', // Sexta
             startTime: '08:00',
             endTime: '16:00',
             isHoliday: false,
-            notes: 'Jornada comercial padrão (8h)'
+            notes: 'Sexta-feira comercial (8h normais)'
           }
         ]
       },
       {
-        id: 'escala-6x1-operacional',
-        name: 'Escala 6x1 — Operacional (Inclui Domingo)',
-        employee: 'Cenário Padrão 2',
+        id: 'escala-func-y',
+        name: 'Escala Semanal — Funcionário Y (6x1 com Domingo)',
+        employee: 'Funcionário Y',
         hourlyRate: 20.0,
         dailyNormalLimit: 8.0,
         overtimeMultiplier: 1.5,
         sundayHolidayMultiplier: 2.0,
         journeys: [
           {
-            id: 'j-6x1-1',
+            id: 'j-y-1',
+            employee: 'Funcionário Y',
             date: '2026-10-19', // Segunda
             startTime: '08:00',
             endTime: '15:00',
@@ -91,7 +99,8 @@
             notes: 'Turno diário (7h)'
           },
           {
-            id: 'j-6x1-2',
+            id: 'j-y-2',
+            employee: 'Funcionário Y',
             date: '2026-10-20', // Terça
             startTime: '08:00',
             endTime: '15:00',
@@ -99,7 +108,8 @@
             notes: 'Turno diário (7h)'
           },
           {
-            id: 'j-6x1-3',
+            id: 'j-y-3',
+            employee: 'Funcionário Y',
             date: '2026-10-21', // Quarta
             startTime: '08:00',
             endTime: '15:00',
@@ -107,7 +117,8 @@
             notes: 'Turno diário (7h)'
           },
           {
-            id: 'j-6x1-4',
+            id: 'j-y-4',
+            employee: 'Funcionário Y',
             date: '2026-10-22', // Quinta
             startTime: '08:00',
             endTime: '15:00',
@@ -115,7 +126,8 @@
             notes: 'Turno diário (7h)'
           },
           {
-            id: 'j-6x1-5',
+            id: 'j-y-5',
+            employee: 'Funcionário Y',
             date: '2026-10-23', // Sexta
             startTime: '08:00',
             endTime: '15:00',
@@ -123,7 +135,8 @@
             notes: 'Turno diário (7h)'
           },
           {
-            id: 'j-6x1-6',
+            id: 'j-y-6',
+            employee: 'Funcionário Y',
             date: '2026-10-25', // Domingo (adicional 100%)
             startTime: '08:00',
             endTime: '15:00',
@@ -135,7 +148,7 @@
       {
         id: 'escala-noturna-plantao',
         name: 'Escala Plantão Noturno (Virada de Meia-Noite)',
-        employee: 'Cenário Noturno 3',
+        employee: 'Colaborador Z',
         hourlyRate: 20.0,
         dailyNormalLimit: 8.0,
         overtimeMultiplier: 1.5,
@@ -143,6 +156,7 @@
         journeys: [
           {
             id: 'j-not-1',
+            employee: 'Colaborador Z',
             date: '2026-10-20', // Terça para Quarta
             startTime: '22:00',
             endTime: '06:00',
@@ -152,6 +166,7 @@
           },
           {
             id: 'j-not-2',
+            employee: 'Colaborador Z',
             date: '2026-10-22', // Quinta para Sexta
             startTime: '22:00',
             endTime: '06:00',
@@ -161,6 +176,7 @@
           },
           {
             id: 'j-not-3',
+            employee: 'Colaborador Z',
             date: '2026-10-24', // Sábado para Domingo (atravessa para domingo)
             startTime: '20:00',
             endTime: '04:00',
@@ -303,10 +319,38 @@
 
     const newJourney = {
       ...journey,
-      id: journey.id || 'j-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5)
+      id: journey.id || 'j-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+      employee: journey.employee || scale.employee || ''
     };
 
     scale.journeys.push(newJourney);
+    saveScales(scales);
+    return scales;
+  }
+
+  /**
+   * Adiciona múltiplas jornadas (ex.: uma semana inteira) de uma só vez a uma escala.
+   * @param {string} scaleId
+   * @param {Array<Object>} journeysList
+   * @returns {Array<Object>}
+   */
+  function addMultipleJourneysToScale(scaleId, journeysList) {
+    const scales = loadScales();
+    const scale = scales.find((s) => s.id === scaleId);
+    if (!scale) throw new Error('Escala de destino não encontrada.');
+
+    if (!Array.isArray(scale.journeys)) {
+      scale.journeys = [];
+    }
+
+    journeysList.forEach((j) => {
+      scale.journeys.push({
+        ...j,
+        id: j.id || 'j-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+        employee: j.employee || scale.employee || ''
+      });
+    });
+
     saveScales(scales);
     return scales;
   }
@@ -423,6 +467,7 @@
     updateScale,
     deleteScale,
     addJourneyToScale,
+    addMultipleJourneysToScale,
     updateJourneyInScale,
     deleteJourneyFromScale,
     clearAllData,

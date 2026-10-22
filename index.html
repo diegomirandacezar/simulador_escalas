@@ -192,36 +192,61 @@
 
       <!-- Formulário de Cadastro Rápido de Jornada -->
       <section class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm" aria-labelledby="headingNovaJornada">
-        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 border-b border-slate-100 pb-3 gap-2">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
-            <h2 id="headingNovaJornada" class="text-base font-bold text-slate-900">Adicionar Jornada à Escala Ativa</h2>
+            <h2 id="headingNovaJornada" class="text-base font-bold text-slate-900">Adicionar Jornada à Escala</h2>
           </div>
-          <span class="text-xs text-slate-400">Domingos identificados automaticamente</span>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btnAbrirSemanaCompleta" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold border border-indigo-200 shadow-sm transition-all">
+              <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              📅 Incluir Semana Completa (7 dias)
+            </button>
+            <span class="text-xs text-slate-400 hidden md:inline">• Domingos automáticos</span>
+          </div>
         </div>
 
         <form id="formAdicionarJornada" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-3.5 items-end">
-          <!-- Data -->
+          <!-- Seleção da Escala de Destino -->
           <div class="sm:col-span-1 md:col-span-3">
+            <label for="jornadaEscalaSelect" class="block text-xs font-semibold text-slate-700 mb-1">Escala de Destino *</label>
+            <select id="jornadaEscalaSelect" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:bg-white">
+              <!-- Preenchido dinamicamente -->
+            </select>
+          </div>
+
+          <!-- Funcionário Fictício -->
+          <div class="sm:col-span-1 md:col-span-3">
+            <label for="jornadaFuncionario" class="block text-xs font-semibold text-slate-700 mb-1">Funcionário (Fictício)</label>
+            <input type="text" id="jornadaFuncionario" list="listaFuncionariosSugeridos" placeholder="Ex.: Funcionário X, Funcionário Y..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white">
+            <datalist id="listaFuncionariosSugeridos">
+              <option value="Funcionário X">
+              <option value="Funcionário Y">
+              <option value="Colaborador Z">
+            </datalist>
+          </div>
+
+          <!-- Data -->
+          <div class="sm:col-span-1 md:col-span-2">
             <label for="jornadaData" class="block text-xs font-semibold text-slate-700 mb-1">Data da Jornada *</label>
-            <input type="date" id="jornadaData" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white">
+            <input type="date" id="jornadaData" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white">
             <span id="labelDiaSemanaPreview" class="text-[11px] text-slate-500 mt-0.5 block font-medium">Selecione uma data</span>
           </div>
 
           <!-- Hora Entrada -->
           <div class="sm:col-span-1 md:col-span-2">
             <label for="jornadaEntrada" class="block text-xs font-semibold text-slate-700 mb-1">Entrada (HH:MM) *</label>
-            <input type="time" id="jornadaEntrada" required value="08:00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono text-slate-900 focus:bg-white">
+            <input type="time" id="jornadaEntrada" required value="08:00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:bg-white">
           </div>
 
           <!-- Hora Saída -->
           <div class="sm:col-span-1 md:col-span-2">
             <label for="jornadaSaida" class="block text-xs font-semibold text-slate-700 mb-1">Saída (HH:MM) *</label>
-            <input type="time" id="jornadaSaida" required value="16:00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono text-slate-900 focus:bg-white">
+            <input type="time" id="jornadaSaida" required value="16:00" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:bg-white">
           </div>
 
           <!-- Opções de Feriado e Virada -->
-          <div class="sm:col-span-1 md:col-span-3 space-y-1.5 pb-1">
+          <div class="sm:col-span-1 md:col-span-4 space-y-1 pb-1">
             <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 font-medium">
               <input type="checkbox" id="jornadaFeriado" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 border-slate-300">
               <span>Marcar como Feriado</span>
@@ -232,18 +257,18 @@
             </label>
           </div>
 
-          <!-- Botão Submeter -->
-          <div class="sm:col-span-2 md:col-span-2">
-            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-              Adicionar
-            </button>
+          <!-- Observações Opcionais -->
+          <div class="sm:col-span-1 md:col-span-5">
+            <label for="jornadaNotas" class="block text-xs font-medium text-slate-500 mb-1">Observações ou identificação do turno (opcional)</label>
+            <input type="text" id="jornadaNotas" placeholder="Ex.: Turno comercial, horas extras, cobertura..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:bg-white">
           </div>
 
-          <!-- Observações Opcionais -->
-          <div class="col-span-1 sm:col-span-2 md:col-span-12">
-            <label for="jornadaNotas" class="block text-xs font-medium text-slate-500 mb-1">Observações ou identificação do turno (opcional)</label>
-            <input type="text" id="jornadaNotas" placeholder="Ex.: Turno matutino, plantão 12h, cobertura de folga..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:bg-white">
+          <!-- Botão Submeter -->
+          <div class="sm:col-span-2 md:col-span-3">
+            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs py-2.5 px-4 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+              Adicionar Jornada
+            </button>
           </div>
         </form>
       </section>
@@ -265,6 +290,7 @@
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
                 <th class="py-3 px-3.5">Data / Dia</th>
+                <th class="py-3 px-2.5">Funcionário</th>
                 <th class="py-3 px-2.5">Horários</th>
                 <th class="py-3 px-2 text-center">Duração</th>
                 <th class="py-3 px-2.5">Classificação</th>
@@ -428,27 +454,38 @@
         </button>
       </div>
 
-      <form id="formModalEditarJornada" class="space-y-4 mt-4">
+      <form id="formModalEditarJornada" class="space-y-3.5 mt-4">
         <input type="hidden" id="modalEditarJornadaId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="modalEditarJornadaEscalaSelect" class="block text-xs font-semibold text-slate-700 mb-1">Escala de Destino *</label>
+            <select id="modalEditarJornadaEscalaSelect" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-900 focus:bg-white"></select>
+          </div>
+          <div>
+            <label for="modalEditarJornadaFuncionario" class="block text-xs font-semibold text-slate-700 mb-1">Funcionário (Fictício)</label>
+            <input type="text" id="modalEditarJornadaFuncionario" list="listaFuncionariosSugeridos" placeholder="Ex.: Funcionário X, Funcionário Y..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs text-slate-900 focus:bg-white">
+          </div>
+        </div>
 
         <div>
           <label for="modalEditarJornadaData" class="block text-xs font-semibold text-slate-700 mb-1">Data da Jornada *</label>
-          <input type="date" id="modalEditarJornadaData" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white">
+          <input type="date" id="modalEditarJornadaData" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs text-slate-900 focus:bg-white">
           <span id="modalEditarDiaSemanaLabel" class="text-[11px] text-slate-500 mt-0.5 block font-medium"></span>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="modalEditarJornadaEntrada" class="block text-xs font-semibold text-slate-700 mb-1">Entrada (HH:MM) *</label>
-            <input type="time" id="modalEditarJornadaEntrada" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono text-slate-900 focus:bg-white">
+            <input type="time" id="modalEditarJornadaEntrada" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-900 focus:bg-white">
           </div>
           <div>
             <label for="modalEditarJornadaSaida" class="block text-xs font-semibold text-slate-700 mb-1">Saída (HH:MM) *</label>
-            <input type="time" id="modalEditarJornadaSaida" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono text-slate-900 focus:bg-white">
+            <input type="time" id="modalEditarJornadaSaida" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-900 focus:bg-white">
           </div>
         </div>
 
-        <div class="space-y-2 pt-1">
+        <div class="space-y-1.5 pt-1">
           <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 font-medium">
             <input type="checkbox" id="modalEditarJornadaFeriado" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 border-slate-300">
             <span>Marcar como Feriado</span>
@@ -461,12 +498,78 @@
 
         <div>
           <label for="modalEditarJornadaNotas" class="block text-xs font-medium text-slate-500 mb-1">Observações</label>
-          <input type="text" id="modalEditarJornadaNotas" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:bg-white">
+          <input type="text" id="modalEditarJornadaNotas" class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 focus:bg-white">
         </div>
 
-        <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
           <button type="button" class="btnFecharModal px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-lg">Cancelar</button>
           <button type="submit" class="bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs py-2 px-5 rounded-lg shadow-sm">Atualizar Jornada</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: INCLUIR SEMANA COMPLETA DE JORNADAS -->
+  <div id="modalSemanaCompleta" class="hidden fixed inset-0 z-50 overflow-y-auto modal-backdrop flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-2xl w-full p-6 modal-content-animated relative max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 flex-shrink-0">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <span>📅 Assistente: Incluir Semana de Jornadas</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-normal">7 Dias Contínuos</span>
+          </h3>
+          <p class="text-xs text-slate-500">Gere uma semana inteira de jornadas para o Funcionário X ou Y em 1 clique</p>
+        </div>
+        <button type="button" class="btnFecharModal text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="formModalSemanaCompleta" class="space-y-4 mt-4 overflow-y-auto pr-1 flex-grow">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label for="semanaEscalaSelect" class="block text-xs font-semibold text-slate-700 mb-1">Escala de Destino *</label>
+            <select id="semanaEscalaSelect" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:bg-white"></select>
+          </div>
+          <div>
+            <label for="semanaFuncionario" class="block text-xs font-semibold text-slate-700 mb-1">Funcionário (Fictício) *</label>
+            <input type="text" id="semanaFuncionario" list="listaFuncionariosSugeridos" required placeholder="Ex.: Funcionário X, Funcionário Y..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:bg-white">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label for="semanaDataInicio" class="block text-xs font-semibold text-slate-700 mb-1">Segunda-feira de Início da Semana *</label>
+            <input type="date" id="semanaDataInicio" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:bg-white">
+          </div>
+          <div>
+            <label for="semanaModelo" class="block text-xs font-semibold text-slate-700 mb-1">Modelo de Jornada Semanal</label>
+            <select id="semanaModelo" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 focus:bg-white">
+              <option value="5x2_8h">5x2 Comercial (Seg a Sex 08:00 às 16:00 = 40h, Sáb/Dom Folga)</option>
+              <option value="6x1_dom">6x1 com Domingo (Seg a Sex 08:00 às 15:00, Sáb Folga, Dom 08:00 às 15:00)</option>
+              <option value="5x2_extras">5x2 com Horas Extras (Seg a Sex 08:00 às 18:00 = 10h/dia)</option>
+              <option value="6x1_44h">6x1 Padrão 44h (Seg a Sex 08:00 às 16:00 + Sáb 08:00 às 12:00)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Grade dos 7 Dias da Semana -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+          <div class="bg-slate-100/80 px-3.5 py-2 text-xs font-bold text-slate-700 flex items-center justify-between border-b border-slate-200">
+            <span>Pré-visualização e Ajuste dos 7 Dias da Semana</span>
+            <span id="semanaResumoHoras" class="text-indigo-700 font-mono font-bold text-xs">Total: 40,0h</span>
+          </div>
+          <div id="semanaDiasContainer" class="divide-y divide-slate-100 max-h-56 overflow-y-auto text-xs">
+            <!-- Gerado dinamicamente via app.js -->
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100 flex-shrink-0">
+          <button type="button" class="btnFecharModal px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-lg">Cancelar</button>
+          <button type="submit" id="btnSalvarSemanaCompleta" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs py-2 px-5 rounded-lg shadow-sm flex items-center gap-1.5 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Gerar e Salvar 7 Jornadas
+          </button>
         </div>
       </form>
     </div>
