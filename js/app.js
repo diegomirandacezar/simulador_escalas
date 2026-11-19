@@ -12,7 +12,8 @@
   let state = {
     scales: [],
     activeScaleId: null,
-    activeTab: 'escala', // 'escala' | 'comparacao'
+    activeTab: 'comparacao', // 'comparacao' | 'escala'
+    filterText: '',
     pendingAction: null // Usado pelo modal de confirmação
   };
 
@@ -39,6 +40,7 @@
     // KPIs
     kpiValorHora: document.getElementById('kpiValorHora'),
     kpiLimiteDiario: document.getElementById('kpiLimiteDiario'),
+    kpiJornadaMensal: document.getElementById('kpiJornadaMensal'),
     kpiHorasNormais: document.getElementById('kpiHorasNormais'),
     kpiCustoNormal: document.getElementById('kpiCustoNormal'),
     kpiHorasExtras: document.getElementById('kpiHorasExtras'),
@@ -60,6 +62,7 @@
     jornadaFeriado: document.getElementById('jornadaFeriado'),
     containerFeriadoDiaSeguinte: document.getElementById('containerFeriadoDiaSeguinte'),
     jornadaFeriadoSeguinte: document.getElementById('jornadaFeriadoSeguinte'),
+    jornadaIntervalo: document.getElementById('jornadaIntervalo'),
     jornadaNotas: document.getElementById('jornadaNotas'),
 
     // Tabela de Jornadas
@@ -68,7 +71,17 @@
     estadoVazioJornadas: document.getElementById('estadoVazioJornadas'),
 
     // Comparação
+    formValorHoraGlobal: document.getElementById('formValorHoraGlobal'),
+    inputValorHoraGlobal: document.getElementById('inputValorHoraGlobal'),
+    btnAplicarValorHoraGlobal: document.getElementById('btnAplicarValorHoraGlobal'),
+    feedbackValorHoraGlobal: document.getElementById('feedbackValorHoraGlobal'),
+    checkGlobalDomingoExtra: document.getElementById('checkGlobalDomingoExtra'),
+    checkGlobalFeriadoExtra: document.getElementById('checkGlobalFeriadoExtra'),
     alertaDiscrepanciaTaxa: document.getElementById('alertaDiscrepanciaTaxa'),
+    inputFiltroRanking: document.getElementById('inputFiltroRanking'),
+    btnLimparFiltroRanking: document.getElementById('btnLimparFiltroRanking'),
+    contadorFiltroRanking: document.getElementById('contadorFiltroRanking'),
+    containerChipsFiltro: document.getElementById('containerChipsFiltro'),
     tabelaComparacaoBody: document.getElementById('tabelaComparacaoBody'),
     estadoVazioComparacao: document.getElementById('estadoVazioComparacao'),
     cardsComparativosContainer: document.getElementById('cardsComparativosContainer'),
@@ -78,12 +91,16 @@
     modalEscalaTitulo: document.getElementById('modalEscalaTitulo'),
     formModalEscala: document.getElementById('formModalEscala'),
     modalEscalaId: document.getElementById('modalEscalaId'),
+    modalEscalaCodigo: document.getElementById('modalEscalaCodigo'),
     modalEscalaNome: document.getElementById('modalEscalaNome'),
     modalEscalaFuncionario: document.getElementById('modalEscalaFuncionario'),
+    modalEscalaJornadaMensal: document.getElementById('modalEscalaJornadaMensal'),
     modalEscalaValorHora: document.getElementById('modalEscalaValorHora'),
     modalEscalaLimiteDiario: document.getElementById('modalEscalaLimiteDiario'),
     modalEscalaAdicionalExtra: document.getElementById('modalEscalaAdicionalExtra'),
     modalEscalaAdicionalDomFer: document.getElementById('modalEscalaAdicionalDomFer'),
+    modalEscalaDomingoExtra: document.getElementById('modalEscalaDomingoExtra'),
+    modalEscalaFeriadoExtra: document.getElementById('modalEscalaFeriadoExtra'),
 
     // Modal Editar Jornada
     modalEditarJornada: document.getElementById('modalEditarJornada'),
@@ -95,6 +112,7 @@
     modalEditarDiaSemanaLabel: document.getElementById('modalEditarDiaSemanaLabel'),
     modalEditarJornadaEntrada: document.getElementById('modalEditarJornadaEntrada'),
     modalEditarJornadaSaida: document.getElementById('modalEditarJornadaSaida'),
+    modalEditarJornadaIntervalo: document.getElementById('modalEditarJornadaIntervalo'),
     modalEditarJornadaFeriado: document.getElementById('modalEditarJornadaFeriado'),
     modalContainerFeriadoDiaSeguinte: document.getElementById('modalContainerFeriadoDiaSeguinte'),
     modalEditarJornadaFeriadoSeguinte: document.getElementById('modalEditarJornadaFeriadoSeguinte'),
@@ -155,6 +173,43 @@
     dom.tabBtnEscala.addEventListener('click', () => mudarAba('escala'));
     dom.tabBtnComparacao.addEventListener('click', () => mudarAba('comparacao'));
 
+    // Filtro rápido no Ranking (%texto, texto%, descrição livre)
+    if (dom.inputFiltroRanking) {
+      dom.inputFiltroRanking.addEventListener('input', (e) => {
+        aplicarFiltroRanking(e.target.value, false);
+      });
+    }
+
+    if (dom.btnLimparFiltroRanking) {
+      dom.btnLimparFiltroRanking.addEventListener('click', () => {
+        aplicarFiltroRanking('', true);
+        if (dom.inputFiltroRanking) dom.inputFiltroRanking.focus();
+      });
+    }
+
+    if (dom.containerChipsFiltro) {
+      dom.containerChipsFiltro.querySelectorAll('.chip-filtro').forEach((chip) => {
+        chip.addEventListener('click', () => {
+          aplicarFiltroRanking(chip.dataset.filter || '', true);
+        });
+      });
+    }
+
+    // Alteração global de Valor-Hora e regras de Domingo/Feriado para todas as escalas
+    if (dom.formValorHoraGlobal) {
+      dom.formValorHoraGlobal.addEventListener('submit', tratarAplicarValorHoraGlobal);
+    }
+    if (dom.checkGlobalDomingoExtra) {
+      dom.checkGlobalDomingoExtra.addEventListener('change', () => {
+        aplicarRegraDomFerGlobal('domingo', dom.checkGlobalDomingoExtra.checked);
+      });
+    }
+    if (dom.checkGlobalFeriadoExtra) {
+      dom.checkGlobalFeriadoExtra.addEventListener('change', () => {
+        aplicarRegraDomFerGlobal('feriado', dom.checkGlobalFeriadoExtra.checked);
+      });
+    }
+
     // Mudança de escala selecionada no topo
     dom.selectEscalaAtiva.addEventListener('change', (e) => {
       state.activeScaleId = e.target.value;
@@ -207,8 +262,8 @@
 
     // Botões de Escala
     dom.btnNovaEscala.addEventListener('click', abrirModalNovaEscala);
-    dom.btnEditarEscala.addEventListener('click', abrirModalEditarEscala);
-    dom.btnExcluirEscala.addEventListener('click', confirmarExclusaoEscala);
+    dom.btnEditarEscala.addEventListener('click', () => abrirModalEditarEscala());
+    dom.btnExcluirEscala.addEventListener('click', () => confirmarExclusaoEscala());
     dom.formModalEscala.addEventListener('submit', salvarModalEscala);
 
     // Modal de Edição de Jornada
@@ -360,7 +415,7 @@
   }
 
   /**
-   * Atualiza os selects de escalas em toda a aplicação
+   * Atualiza os selects de escalas em toda a aplicação (ordenados pelo ranking)
    */
   function atualizarSelectEscalas() {
     const selects = [
@@ -370,11 +425,13 @@
       dom.modalEditarJornadaEscalaSelect
     ];
 
+    const comparison = RHCalculator.compareScales(state.scales);
+
     selects.forEach((sel) => {
       if (!sel) return;
       sel.innerHTML = '';
 
-      if (state.scales.length === 0) {
+      if (comparison.rankedScales.length === 0) {
         const opt = document.createElement('option');
         opt.value = '';
         opt.textContent = 'Nenhuma escala cadastrada';
@@ -382,11 +439,12 @@
         return;
       }
 
-      state.scales.forEach((scale) => {
+      comparison.rankedScales.forEach((scale) => {
         const opt = document.createElement('option');
         opt.value = scale.id;
-        const employeeLabel = scale.employee ? ` [${scale.employee}]` : '';
-        opt.textContent = `${scale.name}${employeeLabel} (${RHCalculator.formatCurrency(scale.hourlyRate)}/h)`;
+        const codeLabel = scale.code ? `[${scale.code}] ` : '';
+        const monthlyLabel = scale.monthlyHours ? ` • ${scale.monthlyHours}h/mês` : '';
+        opt.textContent = `${scale.rank}º — ${codeLabel}${scale.name}${monthlyLabel} (${RHCalculator.formatCurrency(scale.totalEstimatedCost)})`;
         if (scale.id === state.activeScaleId) {
           opt.selected = true;
         }
@@ -412,6 +470,7 @@
     if (!escala) {
       dom.kpiValorHora.textContent = 'R$ 0,00';
       dom.kpiLimiteDiario.textContent = '0h';
+      if (dom.kpiJornadaMensal) dom.kpiJornadaMensal.textContent = '--';
       dom.kpiHorasNormais.textContent = '0h';
       dom.kpiCustoNormal.textContent = 'Custo: R$ 0,00';
       dom.kpiHorasExtras.textContent = '0h';
@@ -432,6 +491,11 @@
     // Atualiza KPIs
     dom.kpiValorHora.textContent = RHCalculator.formatCurrency(calculo.hourlyRate);
     dom.kpiLimiteDiario.textContent = `${calculo.dailyNormalLimit.toFixed(1)}h`;
+    if (dom.kpiJornadaMensal) {
+      const codText = calculo.code ? `Cód. ${calculo.code} • ` : '';
+      const jmText = calculo.monthlyHours ? `${calculo.monthlyHours}h/mês` : 'Livre';
+      dom.kpiJornadaMensal.textContent = `${codText}${jmText}`;
+    }
 
     dom.kpiHorasNormais.textContent = RHCalculator.formatHours(calculo.totalNormalHours);
     dom.kpiCustoNormal.textContent = `Custo: ${RHCalculator.formatCurrency(calculo.totalCostNormal)}`;
@@ -468,11 +532,17 @@
       } else {
         const seg = jornada.segments[0];
         if (seg.classification === 'domingo_feriado') {
-          badgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold badge-sunday-holiday">Dom + Feriado (200%)</span>`;
+          badgeHtml = seg.appliedSundayHolidayExtra
+            ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold badge-sunday-holiday">Dom + Feriado (200%)</span>`
+            : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium badge-common">Dom + Feriado (Normal)</span>`;
         } else if (seg.classification === 'domingo') {
-          badgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold badge-sunday">Domingo (200%)</span>`;
+          badgeHtml = seg.appliedSundayHolidayExtra
+            ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold badge-sunday">Domingo (200%)</span>`
+            : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium badge-common">Domingo (Normal)</span>`;
         } else if (seg.classification === 'feriado') {
-          badgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold badge-holiday">Feriado (200%)</span>`;
+          badgeHtml = seg.appliedSundayHolidayExtra
+            ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold badge-holiday">Feriado (200%)</span>`
+            : `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium badge-common">Feriado (Normal)</span>`;
         } else {
           badgeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium badge-common">Dia Comum</span>`;
         }
@@ -522,6 +592,7 @@
         </td>
         <td class="py-3 px-2.5 font-mono text-slate-800">
           ${jornada.startTime} → ${jornada.endTime}
+          ${jornada.breakHours > 0 ? `<span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-sans font-medium bg-slate-100 text-slate-600 border border-slate-200">-${RHCalculator.formatHours(jornada.breakHours)} int.</span>` : ''}
           ${detalhesTramos}
         </td>
         <td class="py-3 px-2 text-center font-mono font-semibold text-slate-900">
@@ -571,29 +642,105 @@
   }
 
   /**
-   * Renderiza a aba de Comparação Geral de Escalas (SPEC 9)
+   * Aplica filtro de escalas na aba de Ranking e sincroniza chips/botão limpar
+   * @param {string} valor
+   * @param {boolean} atualizarInput
+   */
+  function aplicarFiltroRanking(valor, atualizarInput) {
+    state.filterText = String(valor || '').trim();
+    if (atualizarInput && dom.inputFiltroRanking) {
+      dom.inputFiltroRanking.value = state.filterText;
+    }
+
+    if (dom.btnLimparFiltroRanking) {
+      if (state.filterText) {
+        dom.btnLimparFiltroRanking.classList.remove('hidden');
+      } else {
+        dom.btnLimparFiltroRanking.classList.add('hidden');
+      }
+    }
+
+    if (dom.containerChipsFiltro) {
+      const normalizedCurrent = RHCalculator.normalizeSearchText(state.filterText);
+      dom.containerChipsFiltro.querySelectorAll('.chip-filtro').forEach((chip) => {
+        const chipVal = RHCalculator.normalizeSearchText(chip.dataset.filter || '');
+        const ativo = chipVal === normalizedCurrent;
+        chip.classList.toggle('bg-sky-600', ativo);
+        chip.classList.toggle('text-white', ativo);
+        chip.classList.toggle('border-sky-600', ativo);
+        chip.classList.toggle('bg-white', !ativo);
+        chip.classList.toggle('text-slate-700', !ativo);
+        chip.classList.toggle('border-slate-300', !ativo);
+      });
+    }
+
+    renderizarPainelComparacao();
+  }
+
+  /**
+   * Renderiza a aba de Comparação Geral e Ranking de Escalas (SPEC 9)
    */
   function renderizarPainelComparacao() {
     const comparison = RHCalculator.compareScales(state.scales);
 
-    // Alerta de discrepância de taxas horárias
+    // Alerta de discrepância de taxas horárias e sincronização do valor-hora global
     if (comparison.hasRateDiscrepancy) {
       dom.alertaDiscrepanciaTaxa.classList.remove('hidden');
     } else {
       dom.alertaDiscrepanciaTaxa.classList.add('hidden');
+      if (
+        dom.inputValorHoraGlobal &&
+        document.activeElement !== dom.inputValorHoraGlobal &&
+        comparison.rankedScales.length > 0
+      ) {
+        dom.inputValorHoraGlobal.value = Number(comparison.rankedScales[0].hourlyRate).toFixed(2);
+      }
+    }
+
+    // Sincroniza checkboxes globais de Domingo/Feriado (com suporte a estado misto)
+    if (dom.checkGlobalDomingoExtra && comparison.rankedScales.length > 0) {
+      const allSun = comparison.rankedScales.every((s) => s.paySundayExtra !== false);
+      const noneSun = comparison.rankedScales.every((s) => s.paySundayExtra === false);
+      dom.checkGlobalDomingoExtra.checked = allSun;
+      dom.checkGlobalDomingoExtra.indeterminate = !allSun && !noneSun;
+    }
+    if (dom.checkGlobalFeriadoExtra && comparison.rankedScales.length > 0) {
+      const allHol = comparison.rankedScales.every((s) => s.payHolidayExtra !== false);
+      const noneHol = comparison.rankedScales.every((s) => s.payHolidayExtra === false);
+      dom.checkGlobalFeriadoExtra.checked = allHol;
+      dom.checkGlobalFeriadoExtra.indeterminate = !allHol && !noneHol;
     }
 
     dom.tabelaComparacaoBody.innerHTML = '';
     dom.cardsComparativosContainer.innerHTML = '';
 
-    if (comparison.rankedScales.length === 0) {
+    const filtro = state.filterText || '';
+    const escalasFiltradas = RHCalculator.filterScales(comparison.rankedScales, filtro);
+
+    if (dom.contadorFiltroRanking) {
+      const total = comparison.rankedScales.length;
+      const exibidas = escalasFiltradas.length;
+      dom.contadorFiltroRanking.textContent = filtro
+        ? `Filtro ativo: ${exibidas} de ${total} escala(s)`
+        : `Exibindo ${total} de ${total} escalas`;
+    }
+
+    if (dom.btnLimparFiltroRanking) {
+      dom.btnLimparFiltroRanking.classList.toggle('hidden', !filtro);
+    }
+
+    if (escalasFiltradas.length === 0) {
       dom.estadoVazioComparacao.classList.remove('hidden');
+      dom.estadoVazioComparacao.querySelector('p').textContent =
+        comparison.rankedScales.length === 0
+          ? 'Nenhuma escala cadastrada para comparação.'
+          : `Nenhuma escala encontrada para o filtro "${state.filterText}".`;
       return;
     }
 
     dom.estadoVazioComparacao.classList.add('hidden');
 
-    comparison.rankedScales.forEach((scale) => {
+    escalasFiltradas.forEach((scale) => {
       // Linha da tabela
       const tr = document.createElement('tr');
       tr.className = `hover:bg-slate-50 transition-colors border-b border-slate-100 ${
@@ -604,12 +751,30 @@
       let rankBadge = '';
       if (scale.isLowestCost) {
         rankBadge = `
-          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold badge-lowest-cost">
-            🥇 1º (Menor Custo)
+          <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold badge-lowest-cost whitespace-nowrap">
+            🥇 1º (Mais Barata)
           </span>
         `;
       } else {
-        rankBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700">${scale.rank}º Lugar</span>`;
+        rankBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-100 text-slate-700 whitespace-nowrap">${scale.rank}º Lugar</span>`;
+      }
+
+      // Badge de Código e Jornada Mensal
+      const codeBadge = scale.code
+        ? `<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-mono font-bold bg-slate-800 text-white mr-1.5">${escapeHtml(scale.code)}</span>`
+        : '';
+
+      const monthlyBadge = scale.monthlyHours
+        ? `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-sky-50 text-sky-800 border border-sky-200 whitespace-nowrap">${scale.monthlyHours}h/mês</span>`
+        : `<span class="text-slate-400 text-xs">-</span>`;
+
+      let domFerRuleBadge = '';
+      if (!scale.paySundayExtra && !scale.payHolidayExtra) {
+        domFerRuleBadge = `<span class="inline-flex items-center mt-1 ml-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">Dom/Fer: Normal</span>`;
+      } else if (!scale.paySundayExtra) {
+        domFerRuleBadge = `<span class="inline-flex items-center mt-1 ml-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">Dom: Normal</span>`;
+      } else if (!scale.payHolidayExtra) {
+        domFerRuleBadge = `<span class="inline-flex items-center mt-1 ml-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">Feriado: Normal</span>`;
       }
 
       // Diferença
@@ -630,12 +795,21 @@
           ${rankBadge}
         </td>
         <td class="py-3.5 px-3">
-          <div class="font-bold text-slate-900">${escapeHtml(scale.name)}</div>
-          ${
-            scale.employee
-              ? `<span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">👤 ${escapeHtml(scale.employee)}</span>`
-              : ''
-          }
+          <div class="font-bold text-slate-900 flex items-center flex-wrap gap-y-1">
+            ${codeBadge}
+            <span>${escapeHtml(scale.name)}</span>
+          </div>
+          <div class="flex flex-wrap items-center">
+            ${
+              scale.employee
+                ? `<span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(scale.employee)}</span>`
+                : ''
+            }
+            ${domFerRuleBadge}
+          </div>
+        </td>
+        <td class="py-3.5 px-2 text-center">
+          ${monthlyBadge}
         </td>
         <td class="py-3.5 px-2 text-right font-mono text-slate-700">
           ${RHCalculator.formatCurrency(scale.hourlyRate)}
@@ -664,11 +838,26 @@
         <td class="py-3.5 px-3 text-right font-mono text-purple-700">
           ${RHCalculator.formatCurrency(scale.totalCostSundayHoliday)}
         </td>
-        <td class="py-3.5 px-4 text-right font-mono font-extrabold text-slate-900 text-sm bg-slate-100/50">
+        <td class="py-3.5 px-4 text-right font-mono font-extrabold text-slate-900 text-sm bg-slate-100/50 whitespace-nowrap">
           ${RHCalculator.formatCurrency(scale.totalEstimatedCost)}
         </td>
-        <td class="py-3.5 px-3 text-right">
+        <td class="py-3.5 px-3 text-right whitespace-nowrap">
           ${diffHtml}
+        </td>
+        <td class="py-3.5 px-3 text-center whitespace-nowrap">
+          <div class="inline-flex items-center justify-center gap-1.5">
+            <button type="button" data-action="detalhar-escala" data-id="${scale.id}" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-colors" title="Ver jornadas desta escala">
+              Jornadas
+            </button>
+            <button type="button" data-action="editar-escala" data-id="${scale.id}" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition-colors" title="Editar parâmetros desta escala">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              Editar
+            </button>
+            <button type="button" data-action="excluir-escala" data-id="${scale.id}" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors" title="Excluir esta escala">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Excluir
+            </button>
+          </div>
         </td>
       `;
 
@@ -684,25 +873,34 @@
         <div>
           <div class="flex items-start justify-between gap-2 mb-3">
             <div>
-              <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Classificação</span>
+              <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Ranking</span>
               <div class="mt-0.5">${rankBadge}</div>
             </div>
             <div class="text-right">
-              <span class="text-xs text-slate-400">Valor da Hora</span>
-              <div class="font-mono font-bold text-slate-800">${RHCalculator.formatCurrency(scale.hourlyRate)}</div>
+              <span class="text-xs text-slate-400">Jornada Mensal</span>
+              <div class="mt-0.5">${monthlyBadge}</div>
             </div>
           </div>
 
-          <h3 class="font-bold text-slate-900 text-base mb-1">${escapeHtml(scale.name)}</h3>
-          ${
-            scale.employee
-              ? `<div class="mb-3"><span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">👤 ${escapeHtml(scale.employee)}</span></div>`
-              : '<div class="mb-3"></div>'
-          }
+          <h3 class="font-bold text-slate-900 text-sm mb-1.5 leading-snug">
+            ${codeBadge}${escapeHtml(scale.name)}
+          </h3>
+          <div class="mb-3 flex flex-wrap items-center gap-1">
+            ${
+              scale.employee
+                ? `<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">${escapeHtml(scale.employee)}</span>`
+                : ''
+            }
+            ${domFerRuleBadge}
+          </div>
 
-          <div class="space-y-2 py-3 border-y border-slate-100 text-xs">
+          <div class="space-y-1.5 py-3 border-y border-slate-100 text-xs">
             <div class="flex justify-between text-slate-600">
-              <span>Total de Horas:</span>
+              <span>Valor-Hora / Limite Diário:</span>
+              <span class="font-mono font-semibold text-slate-800">${RHCalculator.formatCurrency(scale.hourlyRate)}/h • ${scale.dailyNormalLimit.toFixed(1)}h</span>
+            </div>
+            <div class="flex justify-between text-slate-600">
+              <span>Total Trabalhado (${scale.totalJourneysCount} dias):</span>
               <span class="font-mono font-semibold text-slate-900">${RHCalculator.formatHours(scale.totalHours)}</span>
             </div>
             <div class="flex justify-between text-slate-600">
@@ -730,11 +928,117 @@
               ? `<div class="text-right text-xs text-red-600 font-medium mt-1">+${RHCalculator.formatCurrency(scale.differenceToLowest)} (+${scale.percentageDifference.toFixed(1)}% vs menor custo)</div>`
               : `<div class="text-right text-xs text-emerald-600 font-semibold mt-1">✓ Alternativa de menor custo estimado</div>`
           }
+
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <button type="button" data-action="detalhar-escala" data-id="${scale.id}" class="flex-1 inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-colors">
+              Ver Jornadas
+            </button>
+            <button type="button" data-action="editar-escala" data-id="${scale.id}" class="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+              Editar
+            </button>
+            <button type="button" data-action="excluir-escala" data-id="${scale.id}" class="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Excluir
+            </button>
+          </div>
         </div>
       `;
 
       dom.cardsComparativosContainer.appendChild(card);
     });
+
+    // Vincula ações de Detalhar, Editar e Excluir tanto na tabela quanto nos cards
+    [dom.tabelaComparacaoBody, dom.cardsComparativosContainer].forEach((container) => {
+      container.querySelectorAll('[data-action="detalhar-escala"]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.activeScaleId = btn.dataset.id;
+          atualizarSelectEscalas();
+          preencherFuncionarioPadrao();
+          mudarAba('escala');
+        });
+      });
+
+      container.querySelectorAll('[data-action="editar-escala"]').forEach((btn) => {
+        btn.addEventListener('click', () => abrirModalEditarEscala(btn.dataset.id));
+      });
+
+      container.querySelectorAll('[data-action="excluir-escala"]').forEach((btn) => {
+        btn.addEventListener('click', () => confirmarExclusaoEscala(btn.dataset.id));
+      });
+    });
+  }
+
+  /**
+   * Exibe mensagem temporária de confirmação na barra de parâmetros globais
+   * @param {string} mensagem
+   */
+  function mostrarFeedbackGlobal(mensagem) {
+    if (!dom.feedbackValorHoraGlobal) return;
+    dom.feedbackValorHoraGlobal.textContent = mensagem;
+    dom.feedbackValorHoraGlobal.classList.remove('hidden');
+    clearTimeout(dom.feedbackValorHoraGlobal._hideTimer);
+    dom.feedbackValorHoraGlobal._hideTimer = setTimeout(() => {
+      dom.feedbackValorHoraGlobal.classList.add('hidden');
+    }, 4500);
+  }
+
+  /**
+   * Aplica o valor-hora global (e regras de domingo/feriado) em todas as escalas cadastradas
+   */
+  function tratarAplicarValorHoraGlobal(e) {
+    e.preventDefault();
+
+    if (state.scales.length === 0) {
+      alert('Nenhuma escala cadastrada para atualizar.');
+      return;
+    }
+
+    const novoValor = parseFloat(dom.inputValorHoraGlobal.value);
+    if (isNaN(novoValor) || novoValor <= 0) {
+      alert('Informe um valor por hora válido e maior que zero.');
+      return;
+    }
+
+    const settings = { hourlyRate: novoValor };
+    if (dom.checkGlobalDomingoExtra && !dom.checkGlobalDomingoExtra.indeterminate) {
+      settings.paySundayExtra = dom.checkGlobalDomingoExtra.checked;
+    }
+    if (dom.checkGlobalFeriadoExtra && !dom.checkGlobalFeriadoExtra.indeterminate) {
+      settings.payHolidayExtra = dom.checkGlobalFeriadoExtra.checked;
+    }
+
+    try {
+      state.scales = RHStorage.updateAllGlobalSettings(settings);
+      renderizarInterface();
+      mostrarFeedbackGlobal(`✓ ${RHCalculator.formatCurrency(novoValor)}/h aplicado em ${state.scales.length} escala(s)`);
+    } catch (err) {
+      alert('Erro ao atualizar parâmetros globais: ' + err.message);
+    }
+  }
+
+  /**
+   * Aplica imediatamente em todas as escalas a escolha de considerar ou não
+   * Domingos ou Feriados como hora extra (200%)
+   * @param {'domingo'|'feriado'} tipo
+   * @param {boolean} considerarExtra
+   */
+  function aplicarRegraDomFerGlobal(tipo, considerarExtra) {
+    if (state.scales.length === 0) return;
+
+    const settings = tipo === 'domingo'
+      ? { paySundayExtra: considerarExtra }
+      : { payHolidayExtra: considerarExtra };
+
+    try {
+      state.scales = RHStorage.updateAllGlobalSettings(settings);
+      renderizarInterface();
+      const rotulo = tipo === 'domingo' ? 'Domingos' : 'Feriados';
+      const modo = considerarExtra ? 'hora extra (200%)' : 'jornada normal';
+      mostrarFeedbackGlobal(`✓ ${rotulo} definidos como ${modo} em ${state.scales.length} escala(s)`);
+    } catch (err) {
+      alert('Erro ao atualizar regra global: ' + err.message);
+    }
   }
 
   /**
@@ -753,11 +1057,14 @@
 
     const funcionario = dom.jornadaFuncionario.value.trim() || escala.employee || '';
 
+    const intervalo = dom.jornadaIntervalo ? parseFloat(dom.jornadaIntervalo.value) || 0 : 0;
+
     const novaJornada = {
       date: dom.jornadaData.value,
       employee: funcionario,
       startTime: dom.jornadaEntrada.value,
       endTime: dom.jornadaSaida.value,
+      breakHours: intervalo > 0 ? intervalo : 0,
       isHoliday: dom.jornadaFeriado.checked,
       isHolidayNextDay: dom.jornadaFeriadoSeguinte.checked,
       notes: dom.jornadaNotas.value.trim()
@@ -1047,28 +1354,45 @@
   function abrirModalNovaEscala() {
     dom.modalEscalaTitulo.textContent = 'Nova Escala de Trabalho';
     dom.modalEscalaId.value = '';
+    if (dom.modalEscalaCodigo) dom.modalEscalaCodigo.value = '';
     dom.modalEscalaNome.value = '';
     dom.modalEscalaFuncionario.value = '';
-    dom.modalEscalaValorHora.value = '20.00';
+    if (dom.modalEscalaJornadaMensal) dom.modalEscalaJornadaMensal.value = '200';
+    const valorPadrao = dom.inputValorHoraGlobal && parseFloat(dom.inputValorHoraGlobal.value) > 0
+      ? parseFloat(dom.inputValorHoraGlobal.value).toFixed(2)
+      : '20.00';
+    dom.modalEscalaValorHora.value = valorPadrao;
     dom.modalEscalaLimiteDiario.value = '8.0';
     dom.modalEscalaAdicionalExtra.value = '50';
     dom.modalEscalaAdicionalDomFer.value = '100';
+    if (dom.modalEscalaDomingoExtra) {
+      dom.modalEscalaDomingoExtra.checked = dom.checkGlobalDomingoExtra ? dom.checkGlobalDomingoExtra.checked : true;
+    }
+    if (dom.modalEscalaFeriadoExtra) {
+      dom.modalEscalaFeriadoExtra.checked = dom.checkGlobalFeriadoExtra ? dom.checkGlobalFeriadoExtra.checked : true;
+    }
 
     abrirModal(dom.modalEscala);
   }
 
-  function abrirModalEditarEscala() {
-    const escala = getEscalaAtiva();
+  function abrirModalEditarEscala(scaleId) {
+    const escala = scaleId
+      ? state.scales.find((s) => s.id === scaleId)
+      : getEscalaAtiva();
     if (!escala) return;
 
-    dom.modalEscalaTitulo.textContent = 'Configurar Parâmetros da Escala';
+    dom.modalEscalaTitulo.textContent = 'Editar Escala e Parâmetros';
     dom.modalEscalaId.value = escala.id;
+    if (dom.modalEscalaCodigo) dom.modalEscalaCodigo.value = escala.code || '';
     dom.modalEscalaNome.value = escala.name;
     dom.modalEscalaFuncionario.value = escala.employee || '';
+    if (dom.modalEscalaJornadaMensal) dom.modalEscalaJornadaMensal.value = escala.monthlyHours || '';
     dom.modalEscalaValorHora.value = escala.hourlyRate;
     dom.modalEscalaLimiteDiario.value = escala.dailyNormalLimit;
     dom.modalEscalaAdicionalExtra.value = Math.round(((escala.overtimeMultiplier || 1.5) - 1) * 100);
     dom.modalEscalaAdicionalDomFer.value = Math.round(((escala.sundayHolidayMultiplier || 2.0) - 1) * 100);
+    if (dom.modalEscalaDomingoExtra) dom.modalEscalaDomingoExtra.checked = escala.paySundayExtra !== false;
+    if (dom.modalEscalaFeriadoExtra) dom.modalEscalaFeriadoExtra.checked = escala.payHolidayExtra !== false;
 
     abrirModal(dom.modalEscala);
   }
@@ -1077,20 +1401,29 @@
     e.preventDefault();
 
     const id = dom.modalEscalaId.value;
+    const codigo = dom.modalEscalaCodigo ? dom.modalEscalaCodigo.value.trim() : '';
     const nome = dom.modalEscalaNome.value.trim();
     const funcionario = dom.modalEscalaFuncionario.value.trim();
+    const jornadaMensalRaw = dom.modalEscalaJornadaMensal ? dom.modalEscalaJornadaMensal.value.trim() : '';
+    const jornadaMensal = jornadaMensalRaw !== '' ? parseFloat(jornadaMensalRaw) : null;
     const valorHora = parseFloat(dom.modalEscalaValorHora.value);
     const limiteDiario = parseFloat(dom.modalEscalaLimiteDiario.value);
-    const extraPct = parseFloat(dom.modalEscalaAdicionalExtra.value) || 50;
-    const domFerPct = parseFloat(dom.modalEscalaAdicionalDomFer.value) || 100;
+    const extraPct = parseFloat(dom.modalEscalaAdicionalExtra.value);
+    const domFerPct = parseFloat(dom.modalEscalaAdicionalDomFer.value);
+    const paySundayExtra = dom.modalEscalaDomingoExtra ? dom.modalEscalaDomingoExtra.checked : true;
+    const payHolidayExtra = dom.modalEscalaFeriadoExtra ? dom.modalEscalaFeriadoExtra.checked : true;
 
     const scaleData = {
+      code: codigo,
       name: nome,
       employee: funcionario,
+      monthlyHours: jornadaMensal,
       hourlyRate: valorHora,
       dailyNormalLimit: limiteDiario,
-      overtimeMultiplier: 1 + extraPct / 100,
-      sundayHolidayMultiplier: 1 + domFerPct / 100
+      overtimeMultiplier: 1 + (isNaN(extraPct) ? 50 : extraPct) / 100,
+      sundayHolidayMultiplier: 1 + (isNaN(domFerPct) ? 100 : domFerPct) / 100,
+      paySundayExtra,
+      payHolidayExtra
     };
 
     const validacao = RHCalculator.validateScale(scaleData);
@@ -1102,26 +1435,34 @@
     if (id) {
       // Edição
       state.scales = RHStorage.updateScale(id, scaleData);
+      state.activeScaleId = id;
     } else {
-      // Criação
-      state.scales = RHStorage.addScale(scaleData);
-      state.activeScaleId = state.scales[state.scales.length - 1].id;
+      // Criação com ID conhecido antes da ordenação por ranking
+      const newId = 'escala-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+      state.scales = RHStorage.addScale({ ...scaleData, id: newId });
+      state.activeScaleId = newId;
     }
 
     fecharModal(dom.modalEscala);
     renderizarInterface();
   }
 
-  function confirmarExclusaoEscala() {
-    const escala = getEscalaAtiva();
+  function confirmarExclusaoEscala(scaleId) {
+    const escala = scaleId
+      ? state.scales.find((s) => s.id === scaleId)
+      : getEscalaAtiva();
     if (!escala) return;
+
+    const rotulo = escala.code ? `[${escala.code}] ${escala.name}` : escala.name;
 
     abrirModalConfirmacao(
       'Excluir Escala',
-      `Tem certeza que deseja excluir a escala "${escala.name}" e todas as suas jornadas? Esta ação não pode ser desfeita.`,
+      `Tem certeza que deseja excluir a escala "${rotulo}" e todas as suas jornadas? Esta ação não pode ser desfeita.`,
       () => {
         state.scales = RHStorage.deleteScale(escala.id);
-        state.activeScaleId = state.scales.length > 0 ? state.scales[0].id : null;
+        if (state.activeScaleId === escala.id || !state.scales.some((s) => s.id === state.activeScaleId)) {
+          state.activeScaleId = state.scales.length > 0 ? state.scales[0].id : null;
+        }
         renderizarInterface();
       }
     );
@@ -1144,6 +1485,7 @@
     dom.modalEditarJornadaData.value = jornada.date;
     dom.modalEditarJornadaEntrada.value = jornada.startTime;
     dom.modalEditarJornadaSaida.value = jornada.endTime;
+    if (dom.modalEditarJornadaIntervalo) dom.modalEditarJornadaIntervalo.value = jornada.breakHours || 0;
     dom.modalEditarJornadaFeriado.checked = Boolean(jornada.isHoliday);
     dom.modalEditarJornadaFeriadoSeguinte.checked = Boolean(jornada.isHolidayNextDay);
     dom.modalEditarJornadaNotas.value = jornada.notes || '';
@@ -1163,12 +1505,14 @@
     const journeyId = dom.modalEditarJornadaId.value;
     const destinoEscalaId = dom.modalEditarJornadaEscalaSelect ? dom.modalEditarJornadaEscalaSelect.value : escalaAtual.id;
     const funcionario = dom.modalEditarJornadaFuncionario ? dom.modalEditarJornadaFuncionario.value.trim() : '';
+    const intervalo = dom.modalEditarJornadaIntervalo ? parseFloat(dom.modalEditarJornadaIntervalo.value) || 0 : 0;
 
     const updatedJourney = {
       date: dom.modalEditarJornadaData.value,
       employee: funcionario,
       startTime: dom.modalEditarJornadaEntrada.value,
       endTime: dom.modalEditarJornadaSaida.value,
+      breakHours: intervalo > 0 ? intervalo : 0,
       isHoliday: dom.modalEditarJornadaFeriado.checked,
       isHolidayNextDay: dom.modalEditarJornadaFeriadoSeguinte.checked,
       notes: dom.modalEditarJornadaNotas.value.trim()
@@ -1199,20 +1543,21 @@
 
     abrirModalConfirmacao('Excluir Jornada', 'Deseja remover esta jornada da escala ativa?', () => {
       state.scales = RHStorage.deleteJourneyFromScale(escala.id, journeyId);
-      renderizarEscalaAtiva();
+      renderizarInterface();
     });
   }
 
   /**
-   * Restauração de Exemplos e Limpeza Geral
+   * Restauração de Escalas e Limpeza Geral
    */
   function confirmarRestaurarExemplos() {
     abrirModalConfirmacao(
-      'Restaurar Escalas de Exemplo',
-      'Deseja recarregar o conjunto de escalas e jornadas padrão de demonstração (incluindo as semanas do Funcionário X e Funcionário Y)? Isso substituirá as alterações não salvas externamente.',
+      'Restaurar Catálogo de Escalas',
+      'Deseja recarregar todas as 33 escalas únicas simuladas e ordenadas pelo ranking de menor custo? Isso substituirá as alterações locais atuais.',
       () => {
         state.scales = RHStorage.resetToSampleData();
         state.activeScaleId = state.scales.length > 0 ? state.scales[0].id : null;
+        aplicarFiltroRanking('', true);
         renderizarInterface();
       }
     );

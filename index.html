@@ -43,9 +43,9 @@
         <div>
           <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             Simulador de Escalas de Trabalho
-            <span class="text-xs px-2 py-0.5 rounded font-normal bg-sky-900 text-sky-200 border border-sky-700">Versão 1.0</span>
+            <span class="text-xs px-2 py-0.5 rounded font-normal bg-sky-900 text-sky-200 border border-sky-700">Versão 2.0</span>
           </h1>
-          <p class="text-xs text-slate-400">Comparação de Jornadas e Estimativa de Custos de Mão de Obra</p>
+          <p class="text-xs text-slate-400">Comparação de Jornadas, Ranking de Custos e Gestão de Escalas Mensais</p>
         </div>
       </div>
 
@@ -61,9 +61,9 @@
           Dados (JSON)
         </button>
 
-        <button id="btnRestaurarExemplos" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition-all" title="Restaura escalas de exemplo para testes">
+        <button id="btnRestaurarExemplos" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium border border-slate-700 transition-all" title="Restaura as 33 escalas simuladas e ordenadas pelo ranking">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-          Exemplos
+          Restaurar Escalas
         </button>
 
         <button id="btnLimparDados" class="inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-red-950/60 hover:bg-red-900 text-red-300 hover:text-red-100 text-xs font-medium border border-red-900/60 transition-all" title="Limpar todos os dados salvos neste navegador">
@@ -95,20 +95,20 @@
     </section>
 
     <!-- Navegação em Abas -->
-    <nav class="flex border-b border-slate-200 gap-2" aria-label="Abas de Navegação">
-      <button id="tabBtnEscala" class="tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-sky-600 text-sky-700 flex items-center gap-2 transition-colors">
+    <nav class="flex flex-wrap border-b border-slate-200 gap-2" aria-label="Abas de Navegação">
+      <button id="tabBtnComparacao" class="tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-sky-600 text-sky-700 flex items-center gap-2 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Ranking e Comparação de Escalas
+        <span id="badgeQtdEscalas" class="ml-1 text-xs px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 font-bold">33</span>
+      </button>
+      <button id="tabBtnEscala" class="tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition-colors">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
         Gestão e Detalhamento da Escala
-      </button>
-      <button id="tabBtnComparacao" class="tab-btn px-4 py-2.5 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2 transition-colors">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-        Comparação Geral de Escalas
-        <span id="badgeQtdEscalas" class="ml-1 text-xs px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 font-bold">3</span>
       </button>
     </nav>
 
     <!-- CONTEÚDO DA ABA 1: GESTÃO E DETALHAMENTO DA ESCALA -->
-    <div id="tabContentEscala" class="space-y-6">
+    <div id="tabContentEscala" class="hidden space-y-6">
 
       <!-- Seletor de Escala e Ações da Escala Ativa -->
       <section class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -137,9 +137,12 @@
 
       <!-- Painel de Parâmetros e KPIs Resumo da Escala Selecionada -->
       <section id="painelResumoEscala" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <!-- Card 1: Valor-Hora e Limite Diário -->
+        <!-- Card 1: Valor-Hora, Limite Diário e Jornada Mensal -->
         <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
-          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Parâmetros Contratuais</p>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Parâmetros</p>
+            <span id="kpiJornadaMensal" class="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">200h/mês</span>
+          </div>
           <div class="mt-2 flex items-baseline justify-between">
             <div>
               <span id="kpiValorHora" class="text-xl font-bold font-mono text-slate-900">R$ 20,00</span>
@@ -246,7 +249,7 @@
           </div>
 
           <!-- Opções de Feriado e Virada -->
-          <div class="sm:col-span-1 md:col-span-4 space-y-1 pb-1">
+          <div class="sm:col-span-1 md:col-span-3 space-y-1 pb-1">
             <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 font-medium">
               <input type="checkbox" id="jornadaFeriado" class="rounded text-sky-600 focus:ring-sky-500 w-4 h-4 border-slate-300">
               <span>Marcar como Feriado</span>
@@ -257,8 +260,14 @@
             </label>
           </div>
 
+          <!-- Intervalo Opcional -->
+          <div class="sm:col-span-1 md:col-span-2">
+            <label for="jornadaIntervalo" class="block text-xs font-semibold text-slate-700 mb-1">Intervalo (h)</label>
+            <input type="number" step="0.1" min="0" max="6" id="jornadaIntervalo" value="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono text-slate-900 focus:bg-white">
+          </div>
+
           <!-- Observações Opcionais -->
-          <div class="sm:col-span-1 md:col-span-5">
+          <div class="sm:col-span-1 md:col-span-4">
             <label for="jornadaNotas" class="block text-xs font-medium text-slate-500 mb-1">Observações ou identificação do turno (opcional)</label>
             <input type="text" id="jornadaNotas" placeholder="Ex.: Turno comercial, horas extras, cobertura..." class="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 focus:bg-white">
           </div>
@@ -319,7 +328,49 @@
     </div>
 
     <!-- CONTEÚDO DA ABA 2: PAINEL COMPARATIVO DE ESCALAS (SPEC 9) -->
-    <div id="tabContentComparacao" class="hidden space-y-6">
+    <div id="tabContentComparacao" class="space-y-6">
+
+      <!-- Barra de Parâmetros Globais para Todas as Escalas -->
+      <section class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3" aria-label="Parâmetros Globais para Todas as Escalas">
+        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              Parâmetros Globais para Todas as Escalas
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              Ajuste o valor-hora e defina se domingos e feriados contam como hora extra (200%) ou jornada normal em todas as escalas.
+            </p>
+          </div>
+
+          <form id="formValorHoraGlobal" class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <label for="inputValorHoraGlobal" class="text-xs font-semibold text-slate-700 whitespace-nowrap">Valor-Hora (R$):</label>
+              <input type="number" id="inputValorHoraGlobal" step="0.01" min="0.01" required value="20.00" class="w-28 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-mono font-semibold text-slate-900 focus:bg-white">
+            </div>
+            <button type="submit" id="btnAplicarValorHoraGlobal" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-sm transition-all">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              Aplicar em Todas
+            </button>
+            <span id="feedbackValorHoraGlobal" class="hidden text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg"></span>
+          </form>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-4 text-xs">
+          <span class="font-semibold text-slate-600">Quando a escala cair em:</span>
+          <label class="inline-flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors">
+            <input type="checkbox" id="checkGlobalDomingoExtra" checked class="rounded text-purple-600 focus:ring-purple-500 w-4 h-4 border-slate-300">
+            <span class="font-semibold text-slate-800">Domingo: considerar hora extra (200%)</span>
+          </label>
+          <label class="inline-flex items-center gap-2 cursor-pointer bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors">
+            <input type="checkbox" id="checkGlobalFeriadoExtra" checked class="rounded text-purple-600 focus:ring-purple-500 w-4 h-4 border-slate-300">
+            <span class="font-semibold text-slate-800">Feriado: considerar hora extra (200%)</span>
+          </label>
+          <span class="text-[11px] text-slate-500">
+            (Se desmarcado, conta como jornada normal até o limite diário — ex.: folga compensatória ou 12x36)
+          </span>
+        </div>
+      </section>
 
       <!-- Alerta de Discrepância de Taxa Horária (SPEC 9) -->
       <div id="alertaDiscrepanciaTaxa" class="hidden bg-sky-50 border border-sky-300 rounded-xl p-4 text-xs sm:text-sm text-sky-900 flex items-start gap-3">
@@ -334,16 +385,55 @@
 
       <!-- Tabela Comparativa Geral -->
       <section class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" aria-labelledby="headingTabelaComparacao">
-        <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <div>
-            <h2 id="headingTabelaComparacao" class="text-base font-bold text-slate-900">Comparação e Ranking de Custo Estimado</h2>
-            <p class="text-xs text-slate-500">Ordenado automaticamente do menor para o maior custo para a empresa</p>
+        <div class="p-4 border-b border-slate-100 space-y-3">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div>
+              <h2 id="headingTabelaComparacao" class="text-base font-bold text-slate-900">Comparação e Ranking de Custo Estimado</h2>
+              <p class="text-xs text-slate-500">Gravado e ordenado automaticamente do menor para o maior custo (simulação mensal de 30 dias)</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+              <span id="contadorFiltroRanking" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                Exibindo 33 de 33 escalas
+              </span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                Destaque: Menor Custo
+              </span>
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-              <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-              Destaque: Menor Custo
-            </span>
+
+          <!-- Barra de Filtro Avançado por Escala (%texto, texto%, descrição livre) -->
+          <div class="bg-slate-50/80 border border-slate-200/80 rounded-xl p-3 space-y-2.5">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div class="relative flex-1">
+                <input type="text" id="inputFiltroRanking" placeholder="Filtrar escala (ex.: %6x1, %ADM, %12x36, BA%, 180h ou qualquer descrição)..." class="w-full bg-white border border-slate-300 rounded-lg pl-9 pr-9 py-2 text-xs text-slate-800 font-medium focus:bg-white">
+                <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <button type="button" id="btnLimparFiltroRanking" class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 rounded" title="Limpar filtro">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div id="containerChipsFiltro" class="flex flex-wrap items-center gap-1.5">
+                <span class="text-[11px] font-semibold text-slate-500 mr-1">Filtros rápidos:</span>
+                <button type="button" data-filter="" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-sky-600 text-white border border-sky-600 transition-colors">Todas</button>
+                <button type="button" data-filter="%6x1" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%6x1</button>
+                <button type="button" data-filter="%5x2" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%5x2</button>
+                <button type="button" data-filter="%ADM" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%ADM</button>
+                <button type="button" data-filter="%12x36" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%12x36</button>
+                <button type="button" data-filter="%4x4" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%4x4</button>
+                <button type="button" data-filter="%REVEZ" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%REVEZ</button>
+                <button type="button" data-filter="%BA" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%BA</button>
+                <button type="button" data-filter="%SP" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%SP</button>
+                <button type="button" data-filter="%ES" class="chip-filtro px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white hover:bg-sky-50 text-slate-700 border border-slate-300 transition-colors">%ES</button>
+              </div>
+              <p class="text-[11px] text-slate-500">
+                Dica: <code class="font-mono bg-white px-1 py-0.5 rounded border border-slate-200 text-slate-700">%6x1</code> contém •
+                <code class="font-mono bg-white px-1 py-0.5 rounded border border-slate-200 text-slate-700">BA%</code> começa com •
+                <code class="font-mono bg-white px-1 py-0.5 rounded border border-slate-200 text-slate-700">%6x1; %4x4</code> múltiplos
+              </p>
+            </div>
           </div>
         </div>
 
@@ -351,8 +441,9 @@
           <table class="w-full text-left border-collapse text-xs">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
-                <th class="py-3 px-3 text-center">Classificação</th>
-                <th class="py-3 px-3">Escala / Cenário</th>
+                <th class="py-3 px-3 text-center">Ranking</th>
+                <th class="py-3 px-3">Escala / Código</th>
+                <th class="py-3 px-2 text-center">Jornada Mensal</th>
                 <th class="py-3 px-2 text-right">Valor-Hora</th>
                 <th class="py-3 px-2 text-center">Jornadas</th>
                 <th class="py-3 px-2 text-right">Total Horas</th>
@@ -364,6 +455,7 @@
                 <th class="py-3 px-3 text-right">Custo Dom/Fer</th>
                 <th class="py-3 px-4 text-right font-bold text-slate-900 bg-slate-100/70">Custo Total</th>
                 <th class="py-3 px-3 text-right">Diferença vs Menor</th>
+                <th class="py-3 px-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody id="tabelaComparacaoBody" class="divide-y divide-slate-100">
@@ -399,14 +491,26 @@
       <form id="formModalEscala" class="space-y-4 mt-4">
         <input type="hidden" id="modalEscalaId">
 
-        <div>
-          <label for="modalEscalaNome" class="block text-xs font-semibold text-slate-700 mb-1">Nome da Escala / Identificação *</label>
-          <input type="text" id="modalEscalaNome" required placeholder="Ex.: Escala 5x2 Comercial, Turno 12x36..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label for="modalEscalaCodigo" class="block text-xs font-semibold text-slate-700 mb-1">Código (CODHORARIO)</label>
+            <input type="text" id="modalEscalaCodigo" placeholder="Ex.: 0034" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono text-slate-900 focus:bg-white">
+          </div>
+          <div class="sm:col-span-2">
+            <label for="modalEscalaNome" class="block text-xs font-semibold text-slate-700 mb-1">Nome da Escala / Horário *</label>
+            <input type="text" id="modalEscalaNome" required placeholder="Ex.: BA ADM 07:45 ÀS 16:45..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white">
+          </div>
         </div>
 
-        <div>
-          <label for="modalEscalaFuncionario" class="block text-xs font-semibold text-slate-700 mb-1">Cenário / Colaborador (Opcional)</label>
-          <input type="text" id="modalEscalaFuncionario" placeholder="Ex.: Operação Central, Cenário B..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="modalEscalaFuncionario" class="block text-xs font-semibold text-slate-700 mb-1">Cenário / Unidade (Opcional)</label>
+            <input type="text" id="modalEscalaFuncionario" placeholder="Ex.: SP • Escala 6x1..." class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:bg-white">
+          </div>
+          <div>
+            <label for="modalEscalaJornadaMensal" class="block text-xs font-semibold text-slate-700 mb-1">Jornada Mensal (h)</label>
+            <input type="number" step="1" min="1" max="400" id="modalEscalaJornadaMensal" placeholder="Ex.: 180, 200, 210, 220" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono text-slate-900 focus:bg-white">
+          </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -434,6 +538,21 @@
             <input type="number" step="1" min="0" max="300" id="modalEscalaAdicionalDomFer" value="100" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-900 focus:bg-white">
             <span class="text-[11px] text-slate-400 block mt-0.5">Multiplicador 2,0x</span>
           </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 space-y-2">
+          <p class="text-xs font-semibold text-slate-700">Regra quando a escala cair em Domingo ou Feriado:</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 font-medium bg-slate-50 p-2 rounded-lg border border-slate-200">
+              <input type="checkbox" id="modalEscalaDomingoExtra" checked class="rounded text-purple-600 focus:ring-purple-500 w-4 h-4 border-slate-300">
+              <span>Considerar Domingo como extra</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-xs text-slate-700 font-medium bg-slate-50 p-2 rounded-lg border border-slate-200">
+              <input type="checkbox" id="modalEscalaFeriadoExtra" checked class="rounded text-purple-600 focus:ring-purple-500 w-4 h-4 border-slate-300">
+              <span>Considerar Feriado como extra</span>
+            </label>
+          </div>
+          <span class="text-[11px] text-slate-400 block">Se desmarcado, as horas trabalhadas nesse dia entram como jornada normal da escala.</span>
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
@@ -474,14 +593,18 @@
           <span id="modalEditarDiaSemanaLabel" class="text-[11px] text-slate-500 mt-0.5 block font-medium"></span>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-3 gap-3">
           <div>
-            <label for="modalEditarJornadaEntrada" class="block text-xs font-semibold text-slate-700 mb-1">Entrada (HH:MM) *</label>
+            <label for="modalEditarJornadaEntrada" class="block text-xs font-semibold text-slate-700 mb-1">Entrada *</label>
             <input type="time" id="modalEditarJornadaEntrada" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-900 focus:bg-white">
           </div>
           <div>
-            <label for="modalEditarJornadaSaida" class="block text-xs font-semibold text-slate-700 mb-1">Saída (HH:MM) *</label>
+            <label for="modalEditarJornadaSaida" class="block text-xs font-semibold text-slate-700 mb-1">Saída *</label>
             <input type="time" id="modalEditarJornadaSaida" required class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-900 focus:bg-white">
+          </div>
+          <div>
+            <label for="modalEditarJornadaIntervalo" class="block text-xs font-semibold text-slate-700 mb-1">Intervalo (h)</label>
+            <input type="number" step="0.1" min="0" max="6" id="modalEditarJornadaIntervalo" value="0" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-900 focus:bg-white">
           </div>
         </div>
 

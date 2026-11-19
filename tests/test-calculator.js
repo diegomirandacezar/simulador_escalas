@@ -314,6 +314,92 @@ runTest('Cenário 13: Feriado coincidente com domingo (adicional único de 100%)
   assert.strictEqual(res.totalCost, 320);
 });
 
+// 14. Jornada com intervalo explícito informado (08:00 às 17:00 com 1h de intervalo = 8h normais)
+runTest('Cenário 14: Jornada com intervalo explícito (08:00 às 17:00 - 1h intervalo = 8h normais)', () => {
+  const journey = {
+    date: '2026-06-01', // Segunda-feira
+    startTime: '08:00',
+    endTime: '17:00',
+    breakHours: 1,
+    isHoliday: false
+  };
+  const config = { hourlyRate: 20, dailyNormalLimit: 8 };
+  const res = RHCalculator.calculateJourney(journey, config);
+
+  assert.strictEqual(res.totalDuration, 8);
+  assert.strictEqual(res.normalHours, 8);
+  assert.strictEqual(res.overtimeHours, 0);
+  assert.strictEqual(res.totalCost, 160);
+});
+
+// 15. Jornada noturna com virada de meia-noite e intervalo explícito (22:00 às 05:21 - 1h = 6,35h)
+runTest('Cenário 15: Jornada noturna com intervalo explícito atravessando meia-noite', () => {
+  const journey = {
+    date: '2026-06-01', // Segunda para Terça
+    startTime: '22:00',
+    endTime: '05:21',
+    breakHours: 1,
+    isHoliday: false
+  };
+  const config = { hourlyRate: 20, dailyNormalLimit: 8 };
+  const res = RHCalculator.calculateJourney(journey, config);
+
+  assert(Math.abs(res.totalDuration - 6.35) < 0.0001);
+  assert(Math.abs(res.normalHours - 6.35) < 0.0001);
+  assert.strictEqual(res.overtimeHours, 0);
+});
+
+// 16. Domingo configurado para NÃO pagar hora extra (entra como jornada normal)
+runTest('Cenário 16: Domingo sem adicional de 100% (paySundayExtra: false -> conta como jornada normal)', () => {
+  const journey = {
+    date: '2026-10-25', // Domingo
+    startTime: '08:00',
+    endTime: '16:00',
+    isHoliday: false
+  };
+  const config = { hourlyRate: 20, dailyNormalLimit: 8, paySundayExtra: false, payHolidayExtra: true };
+  const res = RHCalculator.calculateJourney(journey, config);
+
+  assert.strictEqual(res.normalHours, 8);
+  assert.strictEqual(res.sundayHolidayHours, 0);
+  assert.strictEqual(res.totalCost, 160);
+});
+
+// 17. Feriado configurado para NÃO pagar hora extra (e Domingo+Feriado com apenas Feriado ativo)
+runTest('Cenário 17: Controle independente de Domingo vs Feriado (payHolidayExtra: false / misto)', () => {
+  const feriadoQuarta = {
+    date: '2026-10-21', // Quarta feriado
+    startTime: '08:00',
+    endTime: '16:00',
+    isHoliday: true
+  };
+  const resSemFeriado = RHCalculator.calculateJourney(feriadoQuarta, {
+    hourlyRate: 20,
+    dailyNormalLimit: 8,
+    paySundayExtra: true,
+    payHolidayExtra: false
+  });
+  assert.strictEqual(resSemFeriado.normalHours, 8);
+  assert.strictEqual(resSemFeriado.sundayHolidayHours, 0);
+  assert.strictEqual(resSemFeriado.totalCost, 160);
+
+  // Domingo que também é feriado: se Domingo=false mas Feriado=true, paga 200% pelo feriado
+  const domFeriado = {
+    date: '2026-10-25', // Domingo feriado
+    startTime: '08:00',
+    endTime: '16:00',
+    isHoliday: true
+  };
+  const resDomFeriado = RHCalculator.calculateJourney(domFeriado, {
+    hourlyRate: 20,
+    dailyNormalLimit: 8,
+    paySundayExtra: false,
+    payHolidayExtra: true
+  });
+  assert.strictEqual(resDomFeriado.sundayHolidayHours, 8);
+  assert.strictEqual(resDomFeriado.totalCost, 320);
+});
+
 console.log(`\n==================================================`);
 console.log(`TOTAL DE TESTES EXECUTADOS: ${totalTests}`);
 console.log(`PASSARAM: ${passedTests}`);

@@ -288,14 +288,45 @@
 
     const overtimeMultiplier = Number(config.overtimeMultiplier) || 1.5;
     const sundayHolidayMultiplier = Number(config.sundayHolidayMultiplier) || 2.0;
+    const paySundayExtra = config.paySundayExtra !== false;
+    const payHolidayExtra = config.payHolidayExtra !== false;
+    const rawBreakHours = Number(journey.breakHours);
+    const breakHours = !isNaN(rawBreakHours) && rawBreakHours > 0 ? rawBreakHours : 0;
 
-    const segments = splitJourneyIntoSegments(
+    const rawSegments = splitJourneyIntoSegments(
       journey.date,
       journey.startTime,
       journey.endTime,
       journey.isHoliday,
       journey.isHolidayNextDay
     );
+
+    // Aplica dedução explícita de intervalo apenas quando breakHours > 0
+    let remainingBreak = breakHours;
+    const segments = rawSegments.map((seg) => ({ ...seg }));
+    if (remainingBreak > 0) {
+      if (segments.length === 1) {
+        const deducted = Math.min(segments[0].durationHours, remainingBreak);
+        segments[0].rawDurationHours = segments[0].durationHours;
+        segments[0].breakHours = deducted;
+        segments[0].durationHours = Math.max(0, segments[0].durationHours - deducted);
+      } else {
+        // Em virada de meia-noite, deduz prioritariamente do tramo mais longo
+        const primaryIdx = segments[1].durationHours >= segments[0].durationHours ? 1 : 0;
+        const secondaryIdx = primaryIdx === 1 ? 0 : 1;
+
+        const deductPrimary = Math.min(segments[primaryIdx].durationHours, remainingBreak);
+        segments[primaryIdx].rawDurationHours = segments[primaryIdx].durationHours;
+        segments[primaryIdx].breakHours = deductPrimary;
+        segments[primaryIdx].durationHours = Math.max(0, segments[primaryIdx].durationHours - deductPrimary);
+        remainingBreak -= deductPrimary;
+
+        const deductSecondary = Math.min(segments[secondaryIdx].durationHours, remainingBreak);
+        segments[secondaryIdx].rawDurationHours = segments[secondaryIdx].durationHours;
+        segments[secondaryIdx].breakHours = deductSecondary;
+        segments[secondaryIdx].durationHours = Math.max(0, segments[secondaryIdx].durationHours - deductSecondary);
+      }
+    }
 
     let totalDuration = 0;
     let normalHoursTotal = 0;
@@ -317,14 +348,15 @@
       let segCostOvertime = 0;
       let segCostSundayHoliday = 0;
 
-      const isEligibleForSundayHoliday = seg.isSunday || seg.isHoliday;
+      const isEligibleForSundayHoliday =
+        (seg.isSunday && paySundayExtra) || (seg.isHoliday && payHolidayExtra);
 
       if (isEligibleForSundayHoliday) {
-        // Horas em domingos ou feriados são calculadas integralmente a 200%
+        // Horas em domingos ou feriados são calculadas integralmente com adicional de 100% (200%)
         segSundayHolidayHours = seg.durationHours;
         segCostSundayHoliday = segSundayHolidayHours * hourlyRate * sundayHolidayMultiplier;
       } else {
-        // Dia comum: apura horas normais até o limite e horas extras excedentes
+        // Dia comum (ou domingo/feriado configurado sem adicional): apura horas normais até o limite e extras excedentes
         segNormalHours = Math.min(seg.durationHours, dailyLimit);
         segOvertimeHours = Math.max(0, seg.durationHours - dailyLimit);
 
@@ -344,6 +376,7 @@
 
       return {
         ...seg,
+        appliedSundayHolidayExtra: isEligibleForSundayHoliday,
         normalHours: segNormalHours,
         overtimeHours: segOvertimeHours,
         sundayHolidayHours: segSundayHolidayHours,
@@ -365,6 +398,7 @@
       endTime: journey.endTime,
       isHoliday: Boolean(journey.isHoliday),
       isHolidayNextDay: Boolean(journey.isHolidayNextDay),
+      breakHours,
       notes: journey.notes || '',
       hourlyRate,
       dailyLimit,
@@ -405,7 +439,9 @@
       hourlyRate,
       dailyNormalLimit: dailyLimit,
       overtimeMultiplier: scale.overtimeMultiplier || 1.5,
-      sundayHolidayMultiplier: scale.sundayHolidayMultiplier || 2.0
+      sundayHolidayMultiplier: scale.sundayHolidayMultiplier || 2.0,
+      paySundayExtra: scale.paySundayExtra !== false,
+      payHolidayExtra: scale.payHolidayExtra !== false
     };
 
     let totalHours = 0;
@@ -433,14 +469,21 @@
 
     const totalEstimatedCost = totalCostNormal + totalCostOvertime + totalCostSundayHoliday;
 
+    const rawMonthlyHours = Number(scale.monthlyHours);
+    const monthlyHours = !isNaN(rawMonthlyHours) && rawMonthlyHours > 0 ? rawMonthlyHours : null;
+
     return {
       id: scale.id,
+      code: scale.code ? String(scale.code).trim() : '',
       name: scale.name || 'Escala Sem Nome',
       employee: scale.employee || '',
+      monthlyHours,
       hourlyRate,
       dailyNormalLimit: dailyLimit,
       overtimeMultiplier: config.overtimeMultiplier,
       sundayHolidayMultiplier: config.sundayHolidayMultiplier,
+      paySundayExtra: config.paySundayExtra,
+      payHolidayExtra: config.payHolidayExtra,
       totalJourneysCount: journeys.length,
       totalHours,
       totalNormalHours,
@@ -473,8 +516,16 @@
     // Calcula cada escala
     const calculatedScales = scales.map((s) => calculateScale(s));
 
-    // Ordena do menor para o maior custo estimado
-    calculatedScales.sort((a, b) => a.totalEstimatedCost - b.totalEstimatedCost);
+    // Ordena do menor para o maior custo estimado (com desempate determinístico)
+    calculatedScales.sort((a, b) => {
+      const costDiff = a.totalEstimatedCost - b.totalEstimatedCost;
+      if (Math.abs(costDiff) > 0.0001) return costDiff;
+      const monthlyDiff = (a.monthlyHours || 0) - (b.monthlyHours || 0);
+      if (monthlyDiff !== 0) return monthlyDiff;
+      const hoursDiff = a.totalHours - b.totalHours;
+      if (Math.abs(hoursDiff) > 0.0001) return hoursDiff;
+      return String(a.code || a.name).localeCompare(String(b.code || b.name), 'pt-BR');
+    });
 
     const lowestCostScale = calculatedScales[0];
     const lowestCost = lowestCostScale ? lowestCostScale.totalEstimatedCost : 0;
@@ -528,6 +579,13 @@
       errors.push('O limite diário de horas normais deve estar entre 0,1 e 24 horas.');
     }
 
+    if (scale.monthlyHours !== undefined && scale.monthlyHours !== null && scale.monthlyHours !== '') {
+      const monthly = Number(scale.monthlyHours);
+      if (isNaN(monthly) || monthly <= 0 || monthly > 400) {
+        errors.push('A jornada mensal deve estar entre 1 e 400 horas.');
+      }
+    }
+
     return {
       isValid: errors.length === 0,
       errors
@@ -573,6 +631,110 @@
     };
   }
 
+  /**
+   * Normaliza texto para busca insensível a acentos, maiúsculas e espaçamento em padrões NxM (ex.: "12 X 36" -> "12x36").
+   * @param {string} text
+   * @returns {string}
+   */
+  function normalizeSearchText(text) {
+    if (text === null || text === undefined) return '';
+    return String(text)
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/(\d)\s*x\s*(?=\d)/g, '$1x')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Escapa metacaracteres de expressão regular.
+   * @param {string} str
+   * @returns {string}
+   */
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
+   * Avalia se uma escala corresponde a uma expressão de filtro.
+   * Suporta sintaxe com coringa "%" (ex.: "%6x1" = contém "6x1", "BA%" = começa com "BA",
+   * "SP%6x1" = "SP" seguido de "6x1"), busca livre por qualquer descrição, múltiplos termos
+   * separados por espaço (E) e múltiplas alternativas separadas por ";" ou "," (OU).
+   *
+   * @param {Object} scale
+   * @param {string} rawQuery
+   * @returns {boolean}
+   */
+  function matchesScaleFilter(scale, rawQuery) {
+    const query = normalizeSearchText(rawQuery);
+    if (!query) return true;
+
+    const codeNorm = normalizeSearchText(scale.code || '');
+    const nameNorm = normalizeSearchText(scale.name || '');
+    const employeeNorm = normalizeSearchText(scale.employee || '');
+    const monthlyNorm = scale.monthlyHours ? `${scale.monthlyHours} ${scale.monthlyHours}h ${scale.monthlyHours}h/mes` : '';
+    const rankNorm = scale.rank ? `${scale.rank} ${scale.rank}o` : '';
+    const fullText = `${codeNorm} ${nameNorm} ${employeeNorm} ${monthlyNorm} ${rankNorm}`.trim();
+    const primaryFields = [nameNorm, codeNorm, employeeNorm].filter(Boolean);
+
+    // Cláusulas separadas por ";" ou "," funcionam como OU
+    const orClauses = query
+      .split(/[;,]/)
+      .map((c) => c.trim())
+      .filter(Boolean);
+
+    if (orClauses.length === 0) return true;
+
+    return orClauses.some((clause) => {
+      // Tokens separados por espaço dentro da cláusula funcionam como E
+      const tokens = clause.split(' ').filter(Boolean);
+      if (tokens.length === 0) return true;
+
+      return tokens.every((token) => {
+        if (!token.includes('%')) {
+          return fullText.includes(token);
+        }
+
+        const startsWithWildcard = token.startsWith('%');
+        const endsWithWildcard = token.endsWith('%');
+        const stripped = token.replace(/^%+|%+$/g, '');
+        if (!stripped) return true;
+
+        const regexBody = stripped
+          .split('%')
+          .map((part) => escapeRegex(part))
+          .join('.*');
+
+        // Ex.: "%6x1" ou "%6x1%" -> contém "6x1" (padrão ERP/TOTVS)
+        if (startsWithWildcard) {
+          return new RegExp(regexBody, 'i').test(fullText);
+        }
+
+        // Ex.: "BA%" -> começa com "BA" no nome, código ou unidade/cenário
+        if (endsWithWildcard) {
+          const startsRegex = new RegExp(`^${regexBody}`, 'i');
+          return primaryFields.some((field) => startsRegex.test(field));
+        }
+
+        // Ex.: "SP%6x1" -> contém "SP" seguido de "6x1"
+        return new RegExp(regexBody, 'i').test(fullText);
+      });
+    });
+  }
+
+  /**
+   * Filtra uma lista de escalas usando matchesScaleFilter.
+   * @param {Array<Object>} scales
+   * @param {string} rawQuery
+   * @returns {Array<Object>}
+   */
+  function filterScales(scales, rawQuery) {
+    if (!Array.isArray(scales)) return [];
+    if (!rawQuery || !String(rawQuery).trim()) return scales;
+    return scales.filter((scale) => matchesScaleFilter(scale, rawQuery));
+  }
+
   return {
     parseTime,
     parseDateSafe,
@@ -587,6 +749,9 @@
     calculateScale,
     compareScales,
     validateScale,
-    validateJourney
+    validateJourney,
+    normalizeSearchText,
+    matchesScaleFilter,
+    filterScales
   };
 });
